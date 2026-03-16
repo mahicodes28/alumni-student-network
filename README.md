@@ -1,2 +1,18 @@
-# alumni-student-network-platform
-An intelligent web platform designed to connect college students with alumni for mentorship, career guidance, and professional networking. The system allows students to search alumni based on skills, company, or domain, enabling meaningful interactions and knowledge sharing between current students and graduates.
+# Alumni Student Interaction Platform
+This project is a web platform that connects college students with alumni for mentorship, career guidance, and networking.
+
+## Features
+- Student and Alumni Registration
+- Login System
+- Alumni Search by Skills
+- Mentorship Request System
+
+## Technologies Used
+Frontend: HTML, CSS, Bootstrap  
+Backend: PHP  
+Database: MySQL
+
+## Team Members
+- Vanshika – Frontend Development
+- Mahi – Backend & Database
+- Rashika – Dataset & Alumni Profiles
