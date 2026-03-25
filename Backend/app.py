@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import sqlite3
+from flask_cors import CORS
 
 app = Flask(__name__)
 
@@ -92,6 +93,25 @@ def get_alumni():
 
     return jsonify(rows)
 
+@app.route('/add')
+def add_data():
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("INSERT INTO alumni (name, company, role, skills) VALUES (?,?,?,?)",
+                   ("Rahul Sharma", "TCS", "Data Scientist", "Python"))
+
+    cursor.execute("INSERT INTO alumni (name, company, role, skills) VALUES (?,?,?,?)",
+                   ("Priya Singh", "Infosys", "ML Engineer", "Machine Learning"))
+
+    conn.commit()
+    conn.close()
+
+    return "Data added"
+
 # run server
 if __name__ == '__main__':
     app.run(debug=True)
+
+app = Flask(__name__)
+CORS(app)
