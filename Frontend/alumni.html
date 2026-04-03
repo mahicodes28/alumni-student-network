@@ -1,36 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Alumni Network</title>
+    <title>Find Alumni | AlumniConnect</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<!-- ✅ Navbar -->
-<header>
+<nav class="navbar">
     <h2>AlumniConnect</h2>
-    <div>
-        <a href="index.html">Home</a>
-        <a href="login.html">Login</a>
-        <a href="register.html" class="btn">Register</a>
+    <div class="nav-links">
+        <a href="dashboard.html">Dashboard</a>
     </div>
-</header>
+</nav>
 
-<!-- ✅ Title -->
-<h2 style="text-align:center; margin-top:20px;">Alumni Network</h2>
+<div class="main">
 
-<!-- ✅ Search Bar -->
-<input type="text" id="search" placeholder="🔍 Search alumni..."
-style="display:block; margin:30px auto; padding:12px; width:320px; border-radius:8px; border:1px solid #ccc;">
+    <h2>🔍 Find Alumni</h2>
 
-<!-- ✅ Cards Container -->
-<div id="alumni-container"></div>
+    <div class="search-box">
+        <input id="skill" placeholder="Search by skill (e.g. python)">
+        <button onclick="search()">Search</button>
+    </div>
 
-<!-- ✅ Footer -->
-<footer>
-    © 2026 AlumniConnect | Made by Team
-</footer>
+    <div id="results" class="card-grid"></div>
 
-<script src="js/script.js"></script>
+</div>
+
+<script src="js/alumni.js"></script>
 </body>
 </html>

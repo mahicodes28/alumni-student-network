@@ -3,25 +3,28 @@ from models import User, Profile
 
 alumni_bp = Blueprint("alumni", __name__)
 
+
+# ================= SEARCH ALUMNI =================
 @alumni_bp.route("/alumni", methods=["GET"])
 def search_alumni():
     skill = request.args.get("skill", "").lower()
 
+    # ✅ Join User + Profile (better performance)
     results = []
 
-    profiles = Profile.query.all()
+    profiles = Profile.query.join(User, Profile.user_id == User.id).filter(User.role == "alumni").all()
 
     for p in profiles:
-        user = User.query.get(p.user_id)
+        if skill in (p.skills or "").lower():
+            results.append({
+                "id": p.user.id,
+                "name": p.user.name,
+                "skills": p.skills,
+                "company": p.company,
+                "experience": p.experience
+            })
 
-        if user and user.role == "alumni":
-            if skill in (p.skills or "").lower():
-                results.append({
-                    "id": user.id,
-                    "name": user.name,
-                    "skills": p.skills,
-                    "company": p.company,
-                    "experience": p.experience
-                })
-
-    return jsonify(results)
+    return jsonify({
+        "count": len(results),
+        "data": results
+    }), 200

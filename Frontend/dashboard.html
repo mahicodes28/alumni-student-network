@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard | AlumniConnect</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- 🔝 NAVBAR -->
+<nav class="navbar">
+    <h2>AlumniConnect</h2>
+
+    <div class="nav-links">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="alumni.html">Find Alumni</a>
+        <a href="chat.html">Chat</a>
+        <button onclick="logout()">Logout</button>
+    </div>
+</nav>
+
+
+<!-- 📦 MAIN LAYOUT -->
+<div class="dashboard">
+
+    <!-- 👤 SIDEBAR -->
+    <div class="sidebar">
+        <h3 id="username">Welcome 👋</h3>
+        <p id="role"></p>
+
+        <button onclick="goToSearch()">🔍 Find Alumni</button>
+        <button onclick="loadProfile()">👤 My Profile</button>
+        <button onclick="loadRequests()">📩 Requests</button>
+    </div>
+
+
+    <!-- 📊 MAIN CONTENT -->
+    <div class="main" id="content">
+
+        <h2>Dashboard</h2>
+
+        <div class="card-grid">
+
+            <div class="card">
+                <h3>🔍 Find Alumni</h3>
+                <p>Connect with professionals</p>
+                <button onclick="goToSearch()">Explore</button>
+            </div>
+
+            <div class="card">
+                <h3>📩 Mentorship</h3>
+                <p>Track your mentorship requests</p>
+                <button onclick="loadRequests()">View</button>
+            </div>
+
+            <div class="card">
+                <h3>👤 Profile</h3>
+                <p>Update your profile</p>
+                <button onclick="loadProfile()">Open</button>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="js/dashboard.js"></script>
+</body>
+</html>

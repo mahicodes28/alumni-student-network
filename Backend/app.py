@@ -1,117 +1,57 @@
-from flask import Flask, request, jsonify
-import sqlite3
+from flask import Flask
 from flask_cors import CORS
+from flask_socketio import SocketIO
+from models import db
 
+# Routes
+from routes.auth import auth_bp
+from routes.profile import profile_bp
+from routes.alumni import alumni_bp
+from routes.mentorship import mentorship_bp
+from routes.admin import admin_bp
+
+import os
+
+# Create Flask app
 app = Flask(__name__)
 
-# connect database
-def get_db():
-    conn = sqlite3.connect("database.db")
-    return conn
+# Base directory
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-@app.route('/')
-def home():
-    return "Flask server is running"
+# Ensure instance folder exists BEFORE DB config
+instance_path = os.path.join(BASE_DIR, "instance")
+os.makedirs(instance_path, exist_ok=True)
 
-# create table (run once)
-@app.route('/init')
-def init_db():
-    conn = get_db()
-    cursor = conn.cursor()
+# Database path
+db_path = os.path.join(instance_path, "database.db")
 
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS students (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        email TEXT,
-        branch TEXT,
-        skills TEXT,
-        password TEXT
-    )
-    ''')
+# Config
+app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SECRET_KEY"] = "secret"
 
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS alumni (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        company TEXT,
-        role TEXT,
-        skills TEXT
-    )
-    ''')
-
-    conn.commit()
-    conn.close()
-
-    return "Database initialized"
-
-# register
-@app.route('/register', methods=['POST'])
-def register():
-    data = request.form
-
-    conn = get_db()
-    cursor = conn.cursor()
-
-    cursor.execute("INSERT INTO students (name,email,branch,skills,password) VALUES (?,?,?,?,?)",
-                   (data['name'], data['email'], data['branch'], data['skills'], data['password']))
-
-    conn.commit()
-    conn.close()
-
-    return "Registration successful"
-
-# login
-@app.route('/login', methods=['POST'])
-def login():
-    email = request.form['email']
-    password = request.form['password']
-
-    conn = get_db()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM students WHERE email=? AND password=?", (email, password))
-    user = cursor.fetchone()
-
-    conn.close()
-
-    if user:
-        return "Login successful"
-    else:
-        return "Invalid credentials"
-
-# fetch alumni
-@app.route('/alumni')
-def get_alumni():
-    conn = get_db()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM alumni")
-    rows = cursor.fetchall()
-
-    conn.close()
-
-    return jsonify(rows)
-
-@app.route('/add')
-def add_data():
-    conn = get_db()
-    cursor = conn.cursor()
-
-    cursor.execute("INSERT INTO alumni (name, company, role, skills) VALUES (?,?,?,?)",
-                   ("Rahul Sharma", "TCS", "Data Scientist", "Python"))
-
-    cursor.execute("INSERT INTO alumni (name, company, role, skills) VALUES (?,?,?,?)",
-                   ("Priya Singh", "Infosys", "ML Engineer", "Machine Learning"))
-
-    conn.commit()
-    conn.close()
-
-    return "Data added"
-
-# run server
-if __name__ == '__main__':
-    app.run(debug=True)
-
-app = Flask(__name__)
+# Extensions
 CORS(app)
+db.init_app(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Register routes
+app.register_blueprint(auth_bp, url_prefix="/api")
+app.register_blueprint(profile_bp, url_prefix="/api")
+app.register_blueprint(alumni_bp, url_prefix="/api")
+app.register_blueprint(mentorship_bp, url_prefix="/api")
+app.register_blueprint(admin_bp, url_prefix="/api")
+
+# ✅ FIXED SOCKET IMPORT
+from sockets.chat import register_socket
+register_socket(socketio)
+
+@app.route("/")
+def home():
+    return "Backend running 🚀"
+
+if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
+
+    socketio.run(app, debug=True)
