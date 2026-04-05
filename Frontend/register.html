@@ -1,24 +1,39 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <title>Register | AlumniConnect</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div class="container">
-    <h2>Register</h2>
 
-    <input id="name" placeholder="Name">
-    <input id="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Password">
+<div class="center">
+    <div class="card login-card">
 
-    <select id="role">
-        <option value="student">Student</option>
-        <option value="alumni">Alumni</option>
-    </select>
+        <h2>Create Account 🚀</h2>
+        <p class="subtitle">Join AlumniConnect</p>
 
-    <button onclick="register()">Register</button>
+        <input id="name" placeholder="Full Name">
+        <input id="email" placeholder="Email">
+        <input id="password" type="password" placeholder="Password">
+
+        <select id="role">
+            <option value="student">Student</option>
+            <option value="alumni">Alumni</option>
+        </select>
+
+        <button onclick="register()">Register</button>
+
+        <p id="msg" class="error"></p>
+
+        <p class="link">
+            Already have an account? 
+            <a href="login.html">Login</a>
+        </p>
+
+    </div>
 </div>
 
 <script src="js/auth.js"></script>
+
 </body>
 </html>

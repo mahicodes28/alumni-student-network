@@ -1,38 +1,61 @@
 const socket = io("http://127.0.0.1:5000");
 
 const user_id = localStorage.getItem("user_id");
+const username = localStorage.getItem("name") || "User";
 
 
 // ================= SEND MESSAGE =================
 function send() {
-    let msg = document.getElementById("msg").value;
+    let input = document.getElementById("msg");
+    let msg = input.value.trim();
 
     if (!msg) return;
 
-    socket.emit("send_message", {
+    const messageData = {
         user_id: user_id,
-        message: msg
-    });
+        name: username,
+        message: msg,
+        time: new Date().toLocaleTimeString()
+    };
 
-    addMessage(msg, "sent");
+    socket.emit("send_message", messageData);
 
-    document.getElementById("msg").value = "";
+    // show own message
+    addMessage(messageData, "sent");
+
+    input.value = "";
 }
+
+
+// ================= ENTER KEY SUPPORT =================
+document.getElementById("msg").addEventListener("keypress", function (e) {
+    if (e.key === "Enter") {
+        send();
+    }
+});
 
 
 // ================= RECEIVE MESSAGE =================
 socket.on("receive_message", data => {
-    addMessage(data.message, "received");
+    // prevent duplicate of your own message
+    if (data.user_id == user_id) return;
+
+    addMessage(data, "received");
 });
 
 
 // ================= ADD MESSAGE TO UI =================
-function addMessage(text, type) {
+function addMessage(data, type) {
     let box = document.getElementById("chatBox");
 
     let div = document.createElement("div");
     div.className = `message ${type}`;
-    div.innerText = text;
+
+    div.innerHTML = `
+        <strong>${data.name || "User"}</strong><br>
+        ${data.message}<br>
+        <small>${data.time || ""}</small>
+    `;
 
     box.appendChild(div);
 

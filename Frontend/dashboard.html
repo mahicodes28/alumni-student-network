@@ -3,7 +3,9 @@
 <head>
     <title>Dashboard | AlumniConnect</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
 
 <!-- 🔝 NAVBAR -->
@@ -18,7 +20,6 @@
     </div>
 </nav>
 
-
 <!-- 📦 MAIN LAYOUT -->
 <div class="dashboard">
 
@@ -30,16 +31,18 @@
         <button onclick="goToSearch()">🔍 Find Alumni</button>
         <button onclick="loadProfile()">👤 My Profile</button>
         <button onclick="loadRequests()">📩 Requests</button>
+
+        <!-- 🔥 NEW ANALYTICS BUTTON -->
+        <button onclick="scrollToAnalytics()">📊 Analytics</button>
     </div>
 
-
     <!-- 📊 MAIN CONTENT -->
-    <div class="main" id="content">
+    <div class="main">
 
         <h2>Dashboard</h2>
 
+        <!-- 🔥 QUICK CARDS -->
         <div class="card-grid">
-
             <div class="card">
                 <h3>🔍 Find Alumni</h3>
                 <p>Connect with professionals</p>
@@ -48,16 +51,51 @@
 
             <div class="card">
                 <h3>📩 Mentorship</h3>
-                <p>Track your mentorship requests</p>
+                <p>Track requests</p>
                 <button onclick="loadRequests()">View</button>
             </div>
 
             <div class="card">
                 <h3>👤 Profile</h3>
-                <p>Update your profile</p>
+                <p>Update profile</p>
                 <button onclick="loadProfile()">Open</button>
             </div>
+        </div>
 
+        <!-- 📊 ANALYTICS SECTION -->
+        <div id="analytics" style="margin-top:40px;">
+            <h2>📊 Mentorship Analytics</h2>
+
+            <!-- STATS -->
+            <div class="card-grid">
+                <div class="card">
+                    <h3>Total Requests</h3>
+                    <p id="total">0</p>
+                </div>
+
+                <div class="card">
+                    <h3>Engagement Score</h3>
+                    <p id="score">0%</p>
+                </div>
+
+                <div class="card">
+                    <h3>Insight</h3>
+                    <p id="insight">---</p>
+                </div>
+            </div>
+
+            <!-- CHARTS -->
+            <div style="margin-top:30px;">
+                <canvas id="barChart"></canvas>
+            </div>
+
+            <div style="margin-top:30px;">
+                <canvas id="pieChart"></canvas>
+            </div>
+
+            <div style="margin-top:30px;">
+                <canvas id="lineChart"></canvas>
+            </div>
         </div>
 
     </div>
@@ -65,5 +103,12 @@
 </div>
 
 <script src="js/dashboard.js"></script>
+
+<script>
+function scrollToAnalytics() {
+    document.getElementById("analytics").scrollIntoView({ behavior: "smooth" });
+}
+</script>
+
 </body>
 </html>
