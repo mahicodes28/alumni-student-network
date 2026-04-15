@@ -15,8 +15,9 @@
         .navbar {
             display: flex;
             justify-content: space-between;
-            padding: 20px 40px;
-            background: #020617;
+            padding: 20px 50px;
+            background: rgba(2, 6, 23, 0.8);
+            backdrop-filter: blur(10px);
         }
 
         .navbar h2 {
@@ -26,9 +27,9 @@
         .navbar button {
             background: #3b82f6;
             border: none;
-            padding: 10px 15px;
+            padding: 10px 18px;
             color: white;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
         }
 
@@ -40,11 +41,16 @@
             justify-content: center;
             align-items: center;
             text-align: center;
-            background: linear-gradient(135deg, #0f172a, #1e293b);
-        }
+            background: 
+           
+        url('https://static.vecteezy.com/system/resources/thumbnails/056/887/879/small/a-dark-blue-abstract-waving-lines-pattern-on-background-for-technology-and-ai-concepts-with-dark-background-with-blue-gradient-flowing-wave-lines-futuristic-technology-vector.jpg');
+
+            background-size: cover;
+            background-position: center;
+    }
 
         .hero h1 {
-            font-size: 48px;
+            font-size: 56px;
             margin-bottom: 10px;
         }
 
@@ -54,13 +60,17 @@
         }
 
         .hero button {
-            margin-top: 20px;
-            padding: 12px 25px;
+            margin-top: 25px;
+            padding: 14px 28px;
             font-size: 16px;
             background: #3b82f6;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
+        }
+
+        .hero button:hover {
+            background: #2563eb;
         }
 
         /* FEATURES */
@@ -68,21 +78,41 @@
             display: flex;
             justify-content: center;
             gap: 30px;
-            padding: 50px;
+            padding: 60px;
             flex-wrap: wrap;
         }
 
         .feature-card {
             background: #1e293b;
-            padding: 20px;
-            border-radius: 12px;
-            width: 250px;
+            padding: 25px;
+            border-radius: 14px;
+            width: 260px;
             text-align: center;
             transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
         .feature-card:hover {
-            transform: translateY(-10px);
+            transform: translateY(-10px) scale(1.02);
+            background: #334155;
+        }
+
+        /* STATS */
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 80px;
+            padding: 50px;
+            background: #020617;
+        }
+
+        .stat h2 {
+            margin: 0;
+            font-size: 32px;
+        }
+
+        .stat p {
+            color: #94a3b8;
         }
 
         /* MODAL */
@@ -101,8 +131,9 @@
         .modal-content {
             background: #1e293b;
             padding: 25px;
-            border-radius: 10px;
-            width: 300px;
+            border-radius: 12px;
+            width: 320px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
         }
 
         .modal input {
@@ -144,26 +175,43 @@
 
 <!-- HERO -->
 <div class="hero">
-    <h1>Connect with Alumni</h1>
+    <h1>AI-Powered Alumni Network</h1>
     <p>Build your network. Find mentors. Grow your career.</p>
+
     <button onclick="openModal()">Get Started</button>
 </div>
 
 <!-- FEATURES -->
 <div class="features">
     <div class="feature-card">
-        <h3>🔍 Find Alumni</h3>
-        <p>Search alumni by skills and companies</p>
+        <h3>🔍 Smart Search</h3>
+        <p>Find alumni based on skills, domain and company</p>
     </div>
 
     <div class="feature-card">
         <h3>📩 Mentorship</h3>
-        <p>Request guidance from experienced professionals</p>
+        <p>Request and connect with experienced professionals</p>
     </div>
 
     <div class="feature-card">
-        <h3>💬 Chat</h3>
-        <p>Connect and communicate in real-time</p>
+        <h3>💬 Real-time Chat</h3>
+        <p>Communicate instantly with alumni</p>
+    </div>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+    <div class="stat">
+        <h2>500+</h2>
+        <p>Alumni</p>
+    </div>
+    <div class="stat">
+        <h2>200+</h2>
+        <p>Students</p>
+    </div>
+    <div class="stat">
+        <h2>100+</h2>
+        <p>Mentorships</p>
     </div>
 </div>
 
