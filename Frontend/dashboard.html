@@ -28,7 +28,7 @@
         <h3 id="username">Welcome 👋</h3>
         <p id="role"></p>
 
-        <button onclick="goToSearch()">🔍 Find Alumni</button>
+        <button id="sidebarSearchBtn" onclick="goToSearch()">🔍 Find Alumni</button>
         <button onclick="loadProfile()">👤 My Profile</button>
         <button onclick="loadRequests()">📩 Requests</button>
 
@@ -43,14 +43,14 @@
 
         <!-- 🔥 QUICK CARDS -->
         <div class="card-grid">
-            <div class="card">
+            <div id="searchCard" class="card">
                 <h3>🔍 Find Alumni</h3>
                 <p>Connect with professionals</p>
                 <button onclick="goToSearch()">Explore</button>
             </div>
 
             <div class="card">
-                <h3>📩 Mentorship</h3>
+                <h3 id="requestsHeader">📩 Mentorship</h3>
                 <p>Track requests</p>
                 <button onclick="loadRequests()">View</button>
             </div>
@@ -59,6 +59,14 @@
                 <h3>👤 Profile</h3>
                 <p>Update profile</p>
                 <button onclick="loadProfile()">Open</button>
+            </div>
+        </div>
+
+        <!-- 📩 REQUESTS LIST SECTION -->
+        <div id="requestsListSection" style="display:none; margin-top:40px;">
+            <h2 id="listTitle">Requests</h2>
+            <div id="requestsContainer" class="card-grid">
+                <!-- Dynamically populated -->
             </div>
         </div>
 

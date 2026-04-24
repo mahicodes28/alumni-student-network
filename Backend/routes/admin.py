@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-from models import User, Profile, MentorshipRequest
+from db import users_col, profiles_col, requests_col
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -7,15 +7,15 @@ admin_bp = Blueprint("admin", __name__)
 # ================= GET ALL USERS =================
 @admin_bp.route("/users", methods=["GET"])
 def get_users():
-    users = User.query.all()
+    users = list(users_col.find({}, {"password": 0}))  # Exclude password
 
     result = []
     for u in users:
         result.append({
-            "id": u.id,
-            "name": u.name,
-            "email": u.email,
-            "role": u.role
+            "id": str(u["_id"]),
+            "name": u["name"],
+            "email": u["email"],
+            "role": u["role"]
         })
 
     return jsonify({
@@ -27,11 +27,11 @@ def get_users():
 # ================= DASHBOARD STATS =================
 @admin_bp.route("/stats", methods=["GET"])
 def get_stats():
-    total_users = User.query.count()
-    total_students = User.query.filter_by(role="student").count()
-    total_alumni = User.query.filter_by(role="alumni").count()
-    total_profiles = Profile.query.count()
-    total_requests = MentorshipRequest.query.count()
+    total_users = users_col.count_documents({})
+    total_students = users_col.count_documents({"role": "student"})
+    total_alumni = users_col.count_documents({"role": "alumni"})
+    total_profiles = profiles_col.count_documents({})
+    total_requests = requests_col.count_documents({})
 
     return jsonify({
         "total_users": total_users,

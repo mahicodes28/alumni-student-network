@@ -1,9 +1,9 @@
 from flask import Blueprint, request, jsonify
-from models import db, MentorshipRequest, User
+from db import requests_col, users_col
 from datetime import datetime
+from bson import ObjectId
 
 mentorship_bp = Blueprint("mentorship", __name__)
-
 
 # ================= SEND REQUEST =================
 @mentorship_bp.route("/request", methods=["POST"])
@@ -13,48 +13,54 @@ def send_request():
     if "student_id" not in data or "alumni_id" not in data:
         return jsonify({"error": "student_id and alumni_id required"}), 400
 
-    student = User.query.get(data["student_id"])
-    alumni = User.query.get(data["alumni_id"])
-
-    if not student or not alumni:
-        return jsonify({"error": "Invalid user IDs"}), 404
+    student_id = ObjectId(data["student_id"])
+    alumni_id = ObjectId(data["alumni_id"])
 
     # Prevent duplicate request
-    existing = MentorshipRequest.query.filter_by(
-        student_id=data["student_id"],
-        alumni_id=data["alumni_id"]
-    ).first()
+    existing = requests_col.find_one({
+        "studentId": student_id,
+        "alumniId": alumni_id
+    })
 
     if existing:
         return jsonify({"error": "Request already exists"}), 409
 
     # Create request
-    req = MentorshipRequest(
-        student_id=data["student_id"],
-        alumni_id=data["alumni_id"],
-        status="pending"
-    )
-
-    db.session.add(req)
-    db.session.commit()
+    requests_col.insert_one({
+        "studentId": student_id,
+        "alumniId": alumni_id,
+        "status": "pending",
+        "createdAt": datetime.utcnow(),
+        "updatedAt": datetime.utcnow()
+    })
 
     return jsonify({"message": "Request sent successfully"}), 201
 
 
 # ================= GET REQUESTS =================
-@mentorship_bp.route("/requests/<int:alumni_id>", methods=["GET"])
-def get_requests(alumni_id):
-    requests = MentorshipRequest.query.filter_by(alumni_id=alumni_id).all()
+@mentorship_bp.route("/requests/<user_id>", methods=["GET"])
+def get_requests(user_id):
+    u_id = ObjectId(user_id)
+    user = users_col.find_one({"_id": u_id})
+    
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    if user["role"] == "alumni":
+        requests = list(requests_col.find({"alumniId": u_id}))
+    else:
+        requests = list(requests_col.find({"studentId": u_id}))
 
     result = []
     for r in requests:
-        student = User.query.get(r.student_id)
+        other_id = r["studentId"] if user["role"] == "alumni" else r["alumniId"]
+        other_user = users_col.find_one({"_id": other_id})
 
         result.append({
-            "request_id": r.id,
-            "student_id": r.student_id,
-            "student_name": student.name if student else "Unknown",
-            "status": r.status
+            "request_id": str(r["_id"]),
+            "other_id": str(other_id),
+            "other_name": other_user["name"] if other_user else "Unknown",
+            "status": r["status"]
         })
 
     return jsonify({
@@ -64,64 +70,56 @@ def get_requests(alumni_id):
 
 
 # ================= ADVANCED ANALYTICS =================
-@mentorship_bp.route("/advanced-stats/<int:alumni_id>", methods=["GET"])
-def advanced_stats(alumni_id):
-    requests = MentorshipRequest.query.filter_by(alumni_id=alumni_id).all()
+@mentorship_bp.route("/advanced-stats/<user_id>", methods=["GET"])
+def advanced_stats(user_id):
+    u_id = ObjectId(user_id)
+    user = users_col.find_one({"_id": u_id})
+    
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    if user["role"] == "alumni":
+        requests = list(requests_col.find({"alumniId": u_id}))
+    else:
+        requests = list(requests_col.find({"studentId": u_id}))
 
     total = len(requests)
-    accepted = len([r for r in requests if r.status == "accepted"])
-    pending = len([r for r in requests if r.status == "pending"])
-    rejected = len([r for r in requests if r.status == "rejected"])
+    accepted = len([r for r in requests if r["status"] == "accepted"])
+    pending = len([r for r in requests if r["status"] == "pending"])
+    rejected = len([r for r in requests if r["status"] == "rejected"])
 
-    # 📈 Growth Data (timeline simulation)
-    growth = {}
-    for r in requests:
-        day = f"Day {r.id}"   # simple timeline
-        growth[day] = growth.get(day, 0) + 1
-
-    # 📊 Engagement Score
     score = (accepted / total * 100) if total > 0 else 0
 
-    # 🤖 Insight Logic
-    if total == 0:
-        insight = "No activity yet"
-    elif score > 70:
-        insight = "🔥 Highly active mentor"
-    elif score > 40:
-        insight = "👍 Good engagement"
+    if user["role"] == "alumni":
+        insight = "🔥 Highly active mentor" if score > 70 else "👍 Good engagement"
+        if total == 0: insight = "No requests yet"
     else:
-        insight = "⚠️ Needs improvement"
+        insight = "✅ Great connection rate" if score > 50 else "🚀 Keep reaching out"
+        if total == 0: insight = "Start connecting with alumni!"
 
     return jsonify({
         "total": total,
         "accepted": accepted,
         "pending": pending,
         "rejected": rejected,
-        "growth": growth,
         "engagement_score": round(score, 2),
         "insight": insight
     })
 
 
 # ================= UPDATE REQUEST =================
-@mentorship_bp.route("/request/<int:id>", methods=["PUT"])
-def update_request(id):
+@mentorship_bp.route("/request/<request_id>", methods=["PUT"])
+def update_request(request_id):
     data = request.get_json()
-
-    req = MentorshipRequest.query.get(id)
-
-    if not req:
-        return jsonify({"error": "Request not found"}), 404
+    r_id = ObjectId(request_id)
 
     allowed_status = ["pending", "accepted", "rejected"]
-
     if "status" not in data or data["status"] not in allowed_status:
         return jsonify({"error": "Invalid status"}), 400
 
-    req.status = data["status"]
-    db.session.commit()
+    requests_col.update_one(
+        {"_id": r_id},
+        {"$set": {"status": data["status"], "updatedAt": datetime.utcnow()}}
+    )
 
-    return jsonify({
-        "message": "Request updated successfully",
-        "new_status": req.status
-    }), 200
+    return jsonify({"message": "Request updated successfully"}), 200

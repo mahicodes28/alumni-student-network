@@ -1,66 +1,82 @@
 from flask import Blueprint, request, jsonify
-from models import db, Profile, User
+from db import profiles_col, users_col
+from bson import ObjectId
 
 profile_bp = Blueprint("profile", __name__)
 
-
 # ================= CREATE / UPDATE PROFILE =================
 @profile_bp.route("/profile", methods=["POST"])
-def create_or_update_profile():
+def create_profile():
     data = request.get_json()
-
-    # ✅ Validate input
     if "user_id" not in data:
         return jsonify({"error": "user_id is required"}), 400
 
-    user = User.query.get(data["user_id"])
-    if not user:
-        return jsonify({"error": "User not found"}), 404
+    user_id = ObjectId(data["user_id"])
+    
+    update_data = {
+        "skills": data.get("skills"),
+        "interests": data.get("interests"),
+        "career_goal": data.get("career_goal"),
+        "company": data.get("company"),
+        "experience": data.get("experience"),
+        "bio": data.get("bio"),
+        "education": data.get("education")
+    }
+    
+    # Remove None values
+    update_data = {k: v for k, v in update_data.items() if v is not None}
 
-    # ✅ Check if profile already exists
-    profile = Profile.query.filter_by(user_id=data["user_id"]).first()
+    profiles_col.update_one(
+        {"userId": user_id},
+        {"$set": update_data},
+        upsert=True
+    )
+    
+    return jsonify({"message": "Profile saved"}), 200
 
-    if profile:
-        # 🔄 Update existing profile
-        profile.skills = data.get("skills", profile.skills)
-        profile.interests = data.get("interests", profile.interests)
-        profile.career_goal = data.get("career_goal", profile.career_goal)
-        profile.company = data.get("company", profile.company)
-        profile.experience = data.get("experience", profile.experience)
+@profile_bp.route("/profile/<user_id>", methods=["PUT"])
+def update_profile(user_id):
+    data = request.get_json()
+    u_id = ObjectId(user_id)
 
-        message = "Profile updated successfully"
+    update_data = {
+        "skills": data.get("skills"),
+        "interests": data.get("interests"),
+        "career_goal": data.get("career_goal"),
+        "company": data.get("company"),
+        "experience": data.get("experience"),
+        "bio": data.get("bio"),
+        "education": data.get("education")
+    }
+    
+    # Remove None values
+    update_data = {k: v for k, v in update_data.items() if v is not None}
 
-    else:
-        # 🆕 Create new profile
-        profile = Profile(
-            user_id=data["user_id"],
-            skills=data.get("skills"),
-            interests=data.get("interests"),
-            career_goal=data.get("career_goal"),
-            company=data.get("company"),
-            experience=data.get("experience")
-        )
-        db.session.add(profile)
-        message = "Profile created successfully"
+    profiles_col.update_one(
+        {"userId": u_id},
+        {"$set": update_data},
+        upsert=True
+    )
 
-    db.session.commit()
-
-    return jsonify({"message": message}), 200
+    return jsonify({"message": "Profile updated successfully"}), 200
 
 
 # ================= GET PROFILE =================
-@profile_bp.route("/profile/<int:user_id>", methods=["GET"])
+@profile_bp.route("/profile/<user_id>", methods=["GET"])
 def get_profile(user_id):
-    profile = Profile.query.filter_by(user_id=user_id).first()
+    u_id = ObjectId(user_id)
+    profile = profiles_col.find_one({"userId": u_id})
 
     if not profile:
         return jsonify({"error": "Profile not found"}), 404
 
     return jsonify({
-        "user_id": profile.user_id,
-        "skills": profile.skills,
-        "interests": profile.interests,
-        "career_goal": profile.career_goal,
-        "company": profile.company,
-        "experience": profile.experience
+        "user_id": str(profile["userId"]),
+        "skills": profile.get("skills", ""),
+        "interests": profile.get("interests", ""),
+        "career_goal": profile.get("career_goal", ""),
+        "company": profile.get("company", ""),
+        "experience": profile.get("experience", ""),
+        "bio": profile.get("bio", ""),
+        "education": profile.get("education", "")
     }), 200
