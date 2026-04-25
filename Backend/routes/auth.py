@@ -26,15 +26,15 @@ def register():
             return jsonify({"error": f"{field} is required"}), 400
 
     # ✅ Check if user already exists
-    if users_col.find_one({"email": data["email"]}):
+    if users_col.find_one({"email": data["email"].lower()}):
         return jsonify({"error": "Email already registered"}), 409
 
     # ✅ Create user
     user_data = {
         "name": data["name"],
-        "email": data["email"],
+        "email": data["email"].lower(),
         "password": generate_password_hash(data["password"]),
-        "role": data["role"],
+        "role": data.get("role", "student"),
         "createdAt": datetime.utcnow()
     }
 
@@ -65,7 +65,8 @@ def login():
     if "email" not in data or "password" not in data:
         return jsonify({"error": "Email and password required"}), 400
 
-    user = users_col.find_one({"email": data["email"]})
+    email = data["email"].lower()
+    user = users_col.find_one({"email": email})
 
     if user and check_password_hash(user["password"], data["password"]):
         return jsonify({

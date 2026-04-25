@@ -26,7 +26,7 @@ const Alumni = () => {
   const requestMentor = async (alumni_id) => {
     try {
       await api.post('/request', {
-        student_id: parseInt(user.user_id),
+        student_id: user.user_id,
         alumni_id: alumni_id
       });
       setRequested(prev => ({ ...prev, [alumni_id]: true }));
