@@ -1,11 +1,14 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, User, MessageCircle, LayoutDashboard, Search } from 'lucide-react';
+import { LogOut, User, MessageCircle, LayoutDashboard, Search, Shield } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isLandingPage = location.pathname === '/';
 
   return (
     <nav className="glass" style={{
@@ -23,9 +26,13 @@ const Navbar = () => {
       </Link>
 
       <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-        {user ? (
+        {user && !isLandingPage ? (
           <>
             <Link to="/dashboard" style={linkStyle}><LayoutDashboard size={18} /> Dashboard</Link>
+            <Link to="/messages" style={linkStyle}><MessageCircle size={18} /> Messages</Link>
+            {user.role === 'admin' && (
+              <Link to="/admin" style={linkStyle}><Shield size={18} /> Admin Console</Link>
+            )}
             {user.role === 'student' && (
               <Link to="/alumni" style={linkStyle}><Search size={18} /> Find Alumni</Link>
             )}

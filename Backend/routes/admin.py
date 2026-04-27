@@ -24,6 +24,40 @@ def get_users():
     }), 200
 
 
+# ================= PENDING ALUMNI =================
+@admin_bp.route("/pending", methods=["GET"])
+def get_pending_alumni():
+    pending = list(users_col.find({"role": "alumni", "status": "pending"}, {"password": 0}))
+    
+    result = []
+    for u in pending:
+        result.append({
+            "id": str(u["_id"]),
+            "name": u["name"],
+            "email": u["email"],
+            "createdAt": u.get("createdAt", "")
+        })
+
+    return jsonify({"data": result}), 200
+
+
+# ================= APPROVE ALUMNI =================
+@admin_bp.route("/approve/<user_id>", methods=["PUT"])
+def approve_alumni(user_id):
+    from bson import ObjectId
+    users_col.update_one({"_id": ObjectId(user_id)}, {"$set": {"status": "approved"}})
+    return jsonify({"message": "Alumni approved"}), 200
+
+
+# ================= REJECT ALUMNI =================
+@admin_bp.route("/reject/<user_id>", methods=["PUT"])
+def reject_alumni(user_id):
+    from bson import ObjectId
+    # You could either delete them or mark as rejected
+    users_col.update_one({"_id": ObjectId(user_id)}, {"$set": {"status": "rejected"}})
+    return jsonify({"message": "Alumni rejected"}), 200
+
+
 # ================= DASHBOARD STATS =================
 @admin_bp.route("/stats", methods=["GET"])
 def get_stats():

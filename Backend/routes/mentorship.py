@@ -5,7 +5,6 @@ from bson import ObjectId
 
 mentorship_bp = Blueprint("mentorship", __name__)
 
-# ================= SEND REQUEST =================
 @mentorship_bp.route("/request", methods=["POST"])
 def send_request():
     data = request.get_json()
@@ -16,7 +15,6 @@ def send_request():
     student_id = ObjectId(data["student_id"])
     alumni_id = ObjectId(data["alumni_id"])
 
-    # Prevent duplicate request
     existing = requests_col.find_one({
         "studentId": student_id,
         "alumniId": alumni_id
@@ -25,7 +23,6 @@ def send_request():
     if existing:
         return jsonify({"error": "Request already exists"}), 409
 
-    # Create request
     requests_col.insert_one({
         "studentId": student_id,
         "alumniId": alumni_id,
@@ -36,8 +33,6 @@ def send_request():
 
     return jsonify({"message": "Request sent successfully"}), 201
 
-
-# ================= GET REQUESTS =================
 @mentorship_bp.route("/requests/<user_id>", methods=["GET"])
 def get_requests(user_id):
     u_id = ObjectId(user_id)
@@ -63,13 +58,8 @@ def get_requests(user_id):
             "status": r["status"]
         })
 
-    return jsonify({
-        "count": len(result),
-        "data": result
-    }), 200
+    return jsonify({"count": len(result), "data": result}), 200
 
-
-# ================= ADVANCED ANALYTICS =================
 @mentorship_bp.route("/advanced-stats/<user_id>", methods=["GET"])
 def advanced_stats(user_id):
     u_id = ObjectId(user_id)
@@ -106,8 +96,6 @@ def advanced_stats(user_id):
         "insight": insight
     })
 
-
-# ================= UPDATE REQUEST =================
 @mentorship_bp.route("/request/<request_id>", methods=["PUT"])
 def update_request(request_id):
     data = request.get_json()

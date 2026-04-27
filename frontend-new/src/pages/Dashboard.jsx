@@ -12,11 +12,13 @@ import {
   Search,
   User as UserIcon
 } from 'lucide-react';
+import ProfileStrength from '../components/ProfileStrength';
 
 const Dashboard = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [requests, setRequests] = useState([]);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,12 +27,15 @@ const Dashboard = () => {
 
   const fetchData = async () => {
     try {
-      const [statsRes, reqsRes] = await Promise.all([
-        api.get(`/advanced-stats/${user.user_id}`),
-        api.get(`/requests/${user.user_id}`)
+      const id = user.user_id || user.id || user._id;
+      const [statsRes, reqsRes, profileRes] = await Promise.all([
+        api.get(`/advanced-stats/${id}`),
+        api.get(`/requests/${id}`),
+        api.get(`/profile/${id}`)
       ]);
       setStats(statsRes.data);
       setRequests(reqsRes.data.data);
+      setProfile(profileRes.data);
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
     } finally {
@@ -55,6 +60,30 @@ const Dashboard = () => {
         <h1 style={{ fontSize: '2.5rem' }}>Welcome, {user.name} 👋</h1>
         <p style={{ color: 'var(--text-secondary)' }}>Role: {user.role?.toUpperCase()}</p>
       </header>
+
+      {profile && <ProfileStrength profile={profile} userName={user.name} />}
+
+      {user.role === 'alumni' && user.status === 'pending' && (
+        <div className="glass" style={{ 
+          padding: '1.5rem', 
+          background: 'rgba(245, 158, 11, 0.1)', 
+          border: '1px solid var(--warning)',
+          borderRadius: '1rem',
+          marginBottom: '2rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem'
+        }}>
+          <Clock color="var(--warning)" size={32} />
+          <div>
+            <h3 style={{ margin: 0, color: 'var(--warning)' }}>Awaiting University Approval</h3>
+            <p style={{ margin: '4px 0 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              Your profile is currently under review by the university administration. 
+              Once approved, you will be visible to students and able to receive mentorship requests.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* STATS GRID */}
       {stats && (

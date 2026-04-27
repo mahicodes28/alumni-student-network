@@ -10,6 +10,8 @@ import Dashboard from './pages/Dashboard';
 import Alumni from './pages/Alumni';
 
 import Profile from './pages/Profile';
+import Messages from './pages/Messages';
+import AdminDashboard from './pages/AdminDashboard';
 
 // Components
 import Navbar from './components/Navbar';
@@ -46,6 +48,16 @@ function App() {
             <Route path="/alumni" element={
               <ProtectedRoute>
                 <Alumni />
+              </ProtectedRoute>
+            } />
+            <Route path="/messages" element={
+              <ProtectedRoute>
+                <Messages />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <AdminDashboard />
               </ProtectedRoute>
             } />
             

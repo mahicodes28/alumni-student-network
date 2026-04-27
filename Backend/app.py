@@ -48,6 +48,7 @@ from routes.profile import profile_bp
 from routes.alumni import alumni_bp
 from routes.mentorship import mentorship_bp
 from routes.admin import admin_bp
+from routes.messages import messages_bp
 
 # Register routes
 app.register_blueprint(auth_bp, url_prefix="/api")
@@ -55,6 +56,7 @@ app.register_blueprint(profile_bp, url_prefix="/api")
 app.register_blueprint(alumni_bp, url_prefix="/api")
 app.register_blueprint(mentorship_bp, url_prefix="/api")
 app.register_blueprint(admin_bp, url_prefix="/api")
+app.register_blueprint(messages_bp, url_prefix="/api")
 
 # =========================
 # Home Route

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 import { User, Mail, Briefcase, Code, Target, Save, CheckCircle } from 'lucide-react';
 
 const Profile = () => {
@@ -17,13 +17,19 @@ const Profile = () => {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
 
   const fetchProfile = async () => {
     try {
-      const res = await api.get(`/profile/${user.user_id}`);
-      if (res.data) {
+      const id = user.user_id || user.id || user._id;
+      console.log('Fetching profile for ID:', id);
+      const res = await api.get(`/profile/${id}`);
+      console.log('Profile data received:', res.data);
+      
+      if (res.data && !res.data.error) {
         setFormData({
           skills: res.data.skills || '',
           experience: res.data.experience || '',
@@ -45,7 +51,8 @@ const Profile = () => {
     setMessage('');
 
     try {
-      await api.put(`/profile/${user.user_id}`, formData);
+      const id = user.user_id || user.id || user._id;
+      await api.put(`/profile/${id}`, formData);
       setMessage('Profile updated successfully!');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
@@ -56,11 +63,11 @@ const Profile = () => {
     }
   };
 
-  if (loading) return <div className="flex-center" style={{ height: '50vh' }}>Loading Profile...</div>;
+  if (loading) return <div className="flex-center" style={{ height: '50vh', color: 'white' }}>Loading your profile data...</div>;
 
   return (
     <div className="container animate-fade-in" style={{ maxWidth: '800px', paddingBottom: '5rem' }}>
-      <header style={{ marginBottom: '3rem' }}>
+      <header style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>My Profile</h1>
         <p style={{ color: 'var(--text-secondary)' }}>Manage your professional information and skills.</p>
       </header>

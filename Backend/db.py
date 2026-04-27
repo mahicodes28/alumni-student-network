@@ -13,5 +13,4 @@ db = client["alumni_network"]
 users_col = db["users"]
 profiles_col = db["profiles"]
 requests_col = db["requests"]
-skills_col = db["skills"]
-messages_col = db["messages"] # Keeping for now, but not used
+messages_col = db["messages"]

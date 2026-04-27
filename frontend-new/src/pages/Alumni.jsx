@@ -7,20 +7,40 @@ const Alumni = () => {
   const { user } = useAuth();
   const [skill, setSkill] = useState('');
   const [results, setResults] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [requested, setRequested] = useState({}); // track sent requests
+  const [requested, setRequested] = useState({});
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
+  // Fetch alumni and recommendations on load
+  React.useEffect(() => {
+    fetchAlumni();
+    if (user.role === 'student') fetchRecommendations();
+  }, []);
+
+  const fetchRecommendations = async () => {
+    try {
+      const res = await api.get(`/recommendations/${user.user_id}`);
+      setRecommendations(res.data.data || []);
+    } catch (err) {
+      console.error('Recommendation error:', err);
+    }
+  };
+
+  const fetchAlumni = async (searchSkill = '') => {
     setLoading(true);
     try {
-      const res = await api.get(`/alumni?skill=${skill}`);
+      const res = await api.get(`/alumni?skill=${searchSkill}`);
       setResults(res.data.data || []);
     } catch (err) {
       console.error('Search error:', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    fetchAlumni(skill);
   };
 
   const requestMentor = async (alumni_id) => {
@@ -89,7 +109,30 @@ const Alumni = () => {
       {/* LOADING */}
       {loading && <p style={{ color: 'var(--text-secondary)' }}>Searching alumni...</p>}
 
+      {/* RECOMMENDATIONS */}
+      {user.role === 'student' && recommendations.length > 0 && !skill && (
+        <div style={{ marginBottom: '4rem' }}>
+          <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <CheckCircle size={24} /> Recommended for You
+          </h2>
+          <div className="grid-cards">
+            {recommendations.map(alumni => (
+              <AlumniCard
+                key={`rec-${alumni.id}`}
+                alumni={alumni}
+                isStudent={true}
+                requested={!!requested[alumni.id]}
+                onRequest={() => requestMentor(alumni.id)}
+                isRecommendation={true}
+              />
+            ))}
+          </div>
+          <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '3rem 0' }} />
+        </div>
+      )}
+
       {/* RESULTS */}
+      {skill && <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Search Results</h2>}
       {!loading && results.length === 0 && skill && (
         <div className="glass" style={{ padding: '3rem', textAlign: 'center', borderRadius: '1.5rem' }}>
           <p style={{ color: 'var(--text-secondary)' }}>No alumni found for "<strong>{skill}</strong>"</p>
@@ -111,7 +154,7 @@ const Alumni = () => {
   );
 };
 
-const AlumniCard = ({ alumni, isStudent, requested, onRequest }) => (
+const AlumniCard = ({ alumni, isStudent, requested, onRequest, isRecommendation }) => (
   <div className="glass" style={{
     padding: '1.75rem',
     borderRadius: '1.25rem',
@@ -119,7 +162,24 @@ const AlumniCard = ({ alumni, isStudent, requested, onRequest }) => (
     flexDirection: 'column',
     gap: '1rem',
     transition: 'transform 0.3s',
+    border: isRecommendation ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid var(--border)',
+    position: 'relative'
   }}>
+    {isRecommendation && (
+      <div style={{
+        position: 'absolute',
+        top: '1rem',
+        right: '1rem',
+        background: 'var(--primary)',
+        color: 'white',
+        padding: '0.2rem 0.6rem',
+        borderRadius: '8px',
+        fontSize: '0.75rem',
+        fontWeight: 'bold'
+      }}>
+        {alumni.match}% Match
+      </div>
+    )}
     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
       <div style={{
         width: '48px', height: '48px',
