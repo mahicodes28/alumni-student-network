@@ -8,9 +8,9 @@ This project is a web platform that connects college students with alumni for me
 - Mentorship Request System
 
 ## Technologies Used
-Frontend: HTML, CSS, Bootstrap  
-Backend: PHP  
-Database: MySQL
+Frontend: react.js  
+Backend: flask  
+Database: Mongo.db
 
 ## Team Members
 - Vanshika – Frontend Development
