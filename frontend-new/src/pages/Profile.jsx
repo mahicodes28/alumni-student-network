@@ -1,222 +1,728 @@
-import React, { useState, useEffect } from 'react';
+import React, {
+  useState,
+  useEffect
+} from 'react';
+
 import api from '../utils/api';
+
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, Briefcase, Code, Target, Save, CheckCircle } from 'lucide-react';
+
+import {
+
+  User,
+  Briefcase,
+  Code,
+  Target,
+  Save,
+  CheckCircle,
+  Linkedin,
+  Github,
+  Globe,
+  Trophy,
+  Sparkles,
+  GraduationCap,
+  ShieldCheck
+
+} from 'lucide-react';
 
 const Profile = () => {
+
   const { user } = useAuth();
+
   const [formData, setFormData] = useState({
+
     skills: '',
     experience: '',
     company: '',
     career_goal: '',
-    interests: ''
+    interests: '',
+    bio: '',
+    education: '',
+    domain: '',
+    linkedin: '',
+    github: '',
+    portfolio: '',
+    achievements: '',
+    availability: 'Available for mentorship'
+
   });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('');
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [saving, setSaving] =
+    useState(false);
+
+  const [message, setMessage] =
+    useState('');
+
+  const [completion, setCompletion] =
+    useState(0);
+
+  // =========================================
+  // FETCH PROFILE
+  // =========================================
 
   useEffect(() => {
+
     if (user) {
       fetchProfile();
     }
+
   }, [user]);
 
   const fetchProfile = async () => {
+
     try {
-      const id = user.user_id || user.id || user._id;
-      console.log('Fetching profile for ID:', id);
-      const res = await api.get(`/profile/${id}`);
-      console.log('Profile data received:', res.data);
-      
-      if (res.data && !res.data.error) {
+
+      const id =
+        user.user_id ||
+        user.id ||
+        user._id;
+
+      const res = await api.get(
+        `/profile/${id}`
+      );
+
+      if (
+        res.data &&
+        !res.data.error
+      ) {
+
         setFormData({
-          skills: res.data.skills || '',
-          experience: res.data.experience || '',
-          company: res.data.company || '',
-          career_goal: res.data.career_goal || '',
-          interests: res.data.interests || ''
+
+          skills:
+            res.data.skills || '',
+
+          experience:
+            res.data.experience || '',
+
+          company:
+            res.data.company || '',
+
+          career_goal:
+            res.data.career_goal || '',
+
+          interests:
+            res.data.interests || '',
+
+          bio:
+            res.data.bio || '',
+
+          education:
+            res.data.education || '',
+
+          domain:
+            res.data.domain || '',
+
+          linkedin:
+            res.data.linkedin || '',
+
+          github:
+            res.data.github || '',
+
+          portfolio:
+            res.data.portfolio || '',
+
+          achievements:
+            res.data.achievements || '',
+
+          availability:
+            res.data.availability ||
+            'Available for mentorship'
+
         });
+
+        setCompletion(
+          res.data.completion_score || 0
+        );
+
       }
+
     } catch (err) {
-      console.error('Error fetching profile:', err);
+
+      console.error(err);
+
     } finally {
+
       setLoading(false);
+
     }
+
   };
+
+  // =========================================
+  // SUBMIT
+  // =========================================
 
   const handleSubmit = async (e) => {
+
     e.preventDefault();
+
     setSaving(true);
-    setMessage('');
 
     try {
-      const id = user.user_id || user.id || user._id;
-      await api.put(`/profile/${id}`, formData);
-      setMessage('Profile updated successfully!');
-      setTimeout(() => setMessage(''), 3000);
+
+      const id =
+        user.user_id ||
+        user.id ||
+        user._id;
+
+      await api.put(
+        `/profile/${id}`,
+        formData
+      );
+
+      setMessage(
+        'Profile updated successfully!'
+      );
+
+      fetchProfile();
+
+      setTimeout(() => {
+        setMessage('');
+      }, 3000);
+
     } catch (err) {
-      console.error('Error updating profile:', err);
-      alert('Failed to update profile');
+
+      console.error(err);
+
+      alert(
+        'Failed to update profile'
+      );
+
     } finally {
+
       setSaving(false);
+
     }
+
   };
 
-  if (loading) return <div className="flex-center" style={{ height: '50vh', color: 'white' }}>Loading your profile data...</div>;
+  if (loading) {
+
+    return (
+
+      <div className="loader">
+        Loading Profile...
+      </div>
+
+    );
+
+  }
 
   return (
-    <div className="container animate-fade-in" style={{ maxWidth: '800px', paddingBottom: '5rem' }}>
-      <header style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>My Profile</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>Manage your professional information and skills.</p>
-      </header>
 
-      <div className="glass" style={{ padding: '3rem', borderRadius: '2rem' }}>
-        {/* BASIC INFO (Read-only) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginBottom: '3rem', paddingBottom: '2rem', borderBottom: '1px solid var(--border)' }}>
-          <div style={{
-            width: '80px', height: '80px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, var(--primary), #7c3aed)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '2rem', fontWeight: '800'
-          }}>
-            {user.name?.[0]?.toUpperCase() || 'U'}
+    <div className="profile-page">
+
+      {/* HERO */}
+
+      <div className="profile-hero">
+
+        <div className="profile-left">
+
+          <div className="avatar">
+
+            {user.name?.[0]?.toUpperCase()}
+
           </div>
+
           <div>
-            <h2 style={{ margin: 0 }}>{user.name}</h2>
-            <p style={{ color: 'var(--primary)', fontWeight: '600', margin: '4px 0' }}>{user.role?.toUpperCase()}</p>
+
+            <h1>{user.name}</h1>
+
+            <p>
+              {formData.domain || 'Professional Member'}
+            </p>
+
+            <div className="availability">
+
+              <ShieldCheck size={16} />
+
+              {formData.availability}
+
+            </div>
+
           </div>
+
         </div>
 
-        {message && (
-          <div style={{ 
-            background: 'rgba(16, 185, 129, 0.1)', 
-            color: 'var(--success)', 
-            padding: '1rem', 
-            borderRadius: '12px', 
-            marginBottom: '2rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem'
-          }}>
-            <CheckCircle size={20} /> {message}
-          </div>
-        )}
+        {/* PROFILE COMPLETION */}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          <div style={gridStyle}>
-            <div style={inputGroup}>
-              <label style={labelStyle}><Code size={16} /> Skills (comma separated)</label>
-              <input 
-                type="text" 
-                placeholder="e.g. Python, React, Data Science"
-                value={formData.skills}
-                onChange={(e) => setFormData({...formData, skills: e.target.value})}
-                style={inputStyle}
-              />
-            </div>
+        <div className="completion-box">
 
-            <div style={inputGroup}>
-              <label style={labelStyle}><Briefcase size={16} /> Current Company</label>
-              <input 
-                type="text" 
-                placeholder="Where do you work?"
-                value={formData.company}
-                onChange={(e) => setFormData({...formData, company: e.target.value})}
-                style={inputStyle}
-              />
-            </div>
+          <h3>
+            Profile Strength
+          </h3>
 
-            <div style={inputGroup}>
-              <label style={labelStyle}><Target size={16} /> Career Goals</label>
-              <input 
-                type="text" 
-                placeholder="What are you aiming for?"
-                value={formData.career_goal}
-                onChange={(e) => setFormData({...formData, career_goal: e.target.value})}
-                style={inputStyle}
-              />
-            </div>
+          <div className="progress-circle">
 
-            <div style={inputGroup}>
-              <label style={labelStyle}><User size={16} /> Experience Level</label>
-              <input 
-                type="text" 
-                placeholder="e.g. 2 years, Senior, Student"
-                value={formData.experience}
-                onChange={(e) => setFormData({...formData, experience: e.target.value})}
-                style={inputStyle}
-              />
-            </div>
+            <span>
+              {completion}%
+            </span>
+
           </div>
 
-          <div style={inputGroup}>
-            <label style={labelStyle}>Interests</label>
-            <textarea 
-              placeholder="Tell us about what interests you..."
-              value={formData.interests}
-              onChange={(e) => setFormData({...formData, interests: e.target.value})}
-              style={{ ...inputStyle, minHeight: '100px', resize: 'vertical' }}
-            />
-          </div>
+        </div>
 
-          <button 
-            type="submit" 
-            disabled={saving}
-            style={{
-              background: 'var(--primary)',
-              color: 'white',
-              padding: '1rem 2rem',
-              borderRadius: '12px',
-              fontSize: '1rem',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.75rem',
-              marginTop: '1rem',
-              opacity: saving ? 0.7 : 1,
-              cursor: saving ? 'not-allowed' : 'pointer'
-            }}
-          >
-            {saving ? 'Saving...' : <><Save size={20} /> Save Changes</>}
-          </button>
-        </form>
       </div>
+
+      {/* MESSAGE */}
+
+      {message && (
+
+        <div className="success-box">
+
+          <CheckCircle size={18} />
+
+          {message}
+
+        </div>
+
+      )}
+
+      {/* FORM */}
+
+      <form
+        onSubmit={handleSubmit}
+        className="profile-form"
+      >
+
+        {/* GRID */}
+
+        <div className="grid">
+
+          <InputField
+            icon={<Code size={16} />}
+            label="Skills"
+            value={formData.skills}
+            placeholder="React, Python, ML..."
+            onChange={(v) =>
+              setFormData({
+                ...formData,
+                skills: v
+              })
+            }
+          />
+
+          <InputField
+            icon={<Briefcase size={16} />}
+            label="Company"
+            value={formData.company}
+            placeholder="Current organization"
+            onChange={(v) =>
+              setFormData({
+                ...formData,
+                company: v
+              })
+            }
+          />
+
+          <InputField
+            icon={<GraduationCap size={16} />}
+            label="Education"
+            value={formData.education}
+            placeholder="Your education"
+            onChange={(v) =>
+              setFormData({
+                ...formData,
+                education: v
+              })
+            }
+          />
+
+          <InputField
+            icon={<Sparkles size={16} />}
+            label="Domain"
+            value={formData.domain}
+            placeholder="AI/ML, Cloud..."
+            onChange={(v) =>
+              setFormData({
+                ...formData,
+                domain: v
+              })
+            }
+          />
+
+          <InputField
+            icon={<Target size={16} />}
+            label="Career Goals"
+            value={formData.career_goal}
+            placeholder="Your goals"
+            onChange={(v) =>
+              setFormData({
+                ...formData,
+                career_goal: v
+              })
+            }
+          />
+
+          <InputField
+            icon={<User size={16} />}
+            label="Experience"
+            value={formData.experience}
+            placeholder="2 years..."
+            onChange={(v) =>
+              setFormData({
+                ...formData,
+                experience: v
+              })
+            }
+          />
+
+        </div>
+
+        {/* BIO */}
+
+        <TextAreaField
+          label="Professional Bio"
+          value={formData.bio}
+          placeholder="Tell people about yourself..."
+          onChange={(v) =>
+            setFormData({
+              ...formData,
+              bio: v
+            })
+          }
+        />
+
+        {/* INTERESTS */}
+
+        <TextAreaField
+          label="Interests"
+          value={formData.interests}
+          placeholder="Your interests..."
+          onChange={(v) =>
+            setFormData({
+              ...formData,
+              interests: v
+            })
+          }
+        />
+
+        {/* ACHIEVEMENTS */}
+
+        <TextAreaField
+          label="Achievements"
+          value={formData.achievements}
+          placeholder="Hackathons, certifications..."
+          onChange={(v) =>
+            setFormData({
+              ...formData,
+              achievements: v
+            })
+          }
+        />
+
+        {/* SOCIAL LINKS */}
+
+        <div className="grid">
+
+          <InputField
+            icon={<Linkedin size={16} />}
+            label="LinkedIn"
+            value={formData.linkedin}
+            placeholder="LinkedIn profile URL"
+            onChange={(v) =>
+              setFormData({
+                ...formData,
+                linkedin: v
+              })
+            }
+          />
+
+          <InputField
+            icon={<Github size={16} />}
+            label="GitHub"
+            value={formData.github}
+            placeholder="GitHub URL"
+            onChange={(v) =>
+              setFormData({
+                ...formData,
+                github: v
+              })
+            }
+          />
+
+          <InputField
+            icon={<Globe size={16} />}
+            label="Portfolio"
+            value={formData.portfolio}
+            placeholder="Portfolio URL"
+            onChange={(v) =>
+              setFormData({
+                ...formData,
+                portfolio: v
+              })
+            }
+          />
+
+        </div>
+
+        {/* BUTTON */}
+
+        <button
+          type="submit"
+          className="save-btn"
+          disabled={saving}
+        >
+
+          {saving
+            ? 'Saving...'
+            : <>
+                <Save size={18} />
+                Save Profile
+              </>
+          }
+
+        </button>
+
+      </form>
+
+      {/* CSS */}
+
+      <style>{`
+
+        body{
+          background:#081120;
+          color:white;
+          font-family:Inter,sans-serif;
+        }
+
+        .profile-page{
+          padding:3rem 8%;
+          min-height:100vh;
+        }
+
+        .profile-hero{
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          gap:2rem;
+          margin-bottom:2rem;
+          flex-wrap:wrap;
+        }
+
+        .profile-left{
+          display:flex;
+          align-items:center;
+          gap:2rem;
+        }
+
+        .avatar{
+          width:100px;
+          height:100px;
+          border-radius:50%;
+          background:
+          linear-gradient(
+          135deg,
+          #2563eb,
+          #7c3aed
+          );
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          font-size:2rem;
+          font-weight:800;
+        }
+
+        .availability{
+          margin-top:0.7rem;
+          display:inline-flex;
+          align-items:center;
+          gap:0.5rem;
+          background:
+          rgba(16,185,129,0.12);
+          color:#10b981;
+          padding:0.6rem 1rem;
+          border-radius:999px;
+        }
+
+        .completion-box{
+          background:
+          rgba(255,255,255,0.04);
+          border:
+          1px solid rgba(255,255,255,0.08);
+          padding:2rem;
+          border-radius:24px;
+          text-align:center;
+          min-width:220px;
+        }
+
+        .progress-circle{
+          width:120px;
+          height:120px;
+          border-radius:50%;
+          border:10px solid #2563eb;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          margin:1rem auto 0;
+          font-size:1.5rem;
+          font-weight:700;
+        }
+
+        .success-box{
+          display:flex;
+          align-items:center;
+          gap:0.7rem;
+          background:
+          rgba(16,185,129,0.1);
+          color:#10b981;
+          padding:1rem;
+          border-radius:14px;
+          margin-bottom:2rem;
+        }
+
+        .profile-form{
+          display:flex;
+          flex-direction:column;
+          gap:2rem;
+        }
+
+        .grid{
+          display:grid;
+          grid-template-columns:
+          repeat(auto-fit,minmax(300px,1fr));
+          gap:1.5rem;
+        }
+
+        .field{
+          display:flex;
+          flex-direction:column;
+          gap:0.7rem;
+        }
+
+        .field label{
+          display:flex;
+          align-items:center;
+          gap:0.5rem;
+          color:#94a3b8;
+        }
+
+        .field input,
+        .field textarea{
+          background:
+          rgba(255,255,255,0.04);
+          border:
+          1px solid rgba(255,255,255,0.08);
+          padding:1rem;
+          border-radius:16px;
+          color:white;
+          outline:none;
+        }
+
+        .field textarea{
+          min-height:120px;
+          resize:vertical;
+        }
+
+        .save-btn{
+          border:none;
+          background:
+          linear-gradient(
+          135deg,
+          #2563eb,
+          #3b82f6
+          );
+          color:white;
+          padding:1rem 2rem;
+          border-radius:16px;
+          font-weight:600;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          gap:0.8rem;
+          cursor:pointer;
+        }
+
+        .loader{
+          height:100vh;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          color:white;
+        }
+
+        @media(max-width:768px){
+
+          .profile-page{
+            padding:2rem 5%;
+          }
+
+          .profile-hero{
+            flex-direction:column;
+            align-items:flex-start;
+          }
+
+        }
+
+      `}</style>
+
     </div>
+
   );
+
 };
 
-const gridStyle = {
-  display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
-  gap: '2rem'
-};
+// =========================================
+// REUSABLE INPUT
+// =========================================
 
-const inputGroup = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.75rem'
-};
+const InputField = ({
+  icon,
+  label,
+  value,
+  onChange,
+  placeholder
+}) => (
 
-const labelStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-  color: 'var(--text-secondary)',
-  fontSize: '0.9rem',
-  fontWeight: '500'
-};
+  <div className="field">
 
-const inputStyle = {
-  background: 'var(--bg-secondary)',
-  border: '1px solid var(--border)',
-  borderRadius: '12px',
-  padding: '1rem',
-  color: 'white',
-  fontSize: '1rem'
-};
+    <label>
+      {icon}
+      {label}
+    </label>
+
+    <input
+      value={value}
+      onChange={(e) =>
+        onChange(e.target.value)
+      }
+      placeholder={placeholder}
+    />
+
+  </div>
+
+);
+
+// =========================================
+// REUSABLE TEXTAREA
+// =========================================
+
+const TextAreaField = ({
+  label,
+  value,
+  onChange,
+  placeholder
+}) => (
+
+  <div className="field">
+
+    <label>
+      {label}
+    </label>
+
+    <textarea
+      value={value}
+      onChange={(e) =>
+        onChange(e.target.value)
+      }
+      placeholder={placeholder}
+    />
+
+  </div>
+
+);
 
 export default Profile;

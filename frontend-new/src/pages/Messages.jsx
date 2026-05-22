@@ -1,288 +1,875 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef
+} from 'react';
+
 import { useAuth } from '../context/AuthContext';
+
 import api from '../utils/api';
-import { Send, User, MessageCircle, Clock, ChevronLeft } from 'lucide-react';
+
+import {
+
+  Send,
+  MessageCircle,
+  Search,
+  Phone,
+  Video,
+  MoreVertical,
+  CheckCheck,
+  Sparkles,
+  Clock,
+  User2,
+  ChevronLeft
+
+} from 'lucide-react';
 
 const Messages = () => {
+
   const { user } = useAuth();
+
   const [contacts, setContacts] = useState([]);
-  const [selectedContact, setSelectedContact] = useState(null);
+
+  const [selectedContact, setSelectedContact] =
+    useState(null);
+
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
+
+  const [newMessage, setNewMessage] =
+    useState('');
+
   const [loading, setLoading] = useState(true);
+
+  const [search, setSearch] = useState('');
+
   const chatEndRef = useRef(null);
 
-  // Fetch contacts (connected users)
+  // =========================================
+  // FETCH CONTACTS
+  // =========================================
+
   useEffect(() => {
+
     const fetchContacts = async () => {
+
       try {
-        const res = await api.get(`/contacts/${user.user_id}`);
+
+        const res = await api.get(
+          `/contacts/${user.user_id}`
+        );
+
         setContacts(res.data.data || []);
+
       } catch (err) {
-        console.error('Error fetching contacts:', err);
+
+        console.error(err);
+
       } finally {
+
         setLoading(false);
+
       }
+
     };
+
     fetchContacts();
+
   }, [user.user_id]);
 
-  // Fetch conversation when contact is selected
+  // =========================================
+  // FETCH MESSAGES
+  // =========================================
+
   useEffect(() => {
+
     if (!selectedContact) return;
 
     const fetchMessages = async () => {
+
       try {
-        const res = await api.get(`/messages/${selectedContact.id}?user_id=${user.user_id}`);
+
+        const res = await api.get(
+
+          `/messages/${selectedContact.id}?user_id=${user.user_id}`
+
+        );
+
         setMessages(res.data.data || []);
+
       } catch (err) {
-        console.error('Error fetching messages:', err);
+
+        console.error(err);
+
       }
+
     };
 
     fetchMessages();
-    const interval = setInterval(fetchMessages, 3000); // Polling for real-time feel
+
+    const interval = setInterval(
+      fetchMessages,
+      2500
+    );
+
     return () => clearInterval(interval);
+
   }, [selectedContact, user.user_id]);
 
-  // Scroll to bottom
+  // =========================================
+  // AUTO SCROLL
+  // =========================================
+
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+
+    chatEndRef.current?.scrollIntoView({
+      behavior: 'smooth'
+    });
+
   }, [messages]);
 
+  // =========================================
+  // SEND MESSAGE
+  // =========================================
+
   const sendMessage = async (e) => {
+
     e.preventDefault();
-    if (!newMessage.trim() || !selectedContact) return;
+
+    if (
+      !newMessage.trim() ||
+      !selectedContact
+    ) return;
+
+    const tempMessage = {
+
+      sender_id: user.user_id,
+
+      content: newMessage,
+
+      timestamp: new Date().toISOString()
+
+    };
+
+    setMessages(prev => [...prev, tempMessage]);
+
+    const currentMessage = newMessage;
+
+    setNewMessage('');
 
     try {
+
       await api.post('/messages', {
+
         sender_id: user.user_id,
+
         receiver_id: selectedContact.id,
-        content: newMessage
+
+        content: currentMessage
+
       });
-      setNewMessage('');
-      // Optimistic update
-      setMessages([...messages, {
-        sender_id: user.user_id,
-        content: newMessage,
-        timestamp: new Date().toISOString()
-      }]);
+
     } catch (err) {
-      console.error('Error sending message:', err);
+
+      console.error(err);
+
     }
+
   };
 
+  // =========================================
+  // FILTER CONTACTS
+  // =========================================
+
+  const filteredContacts = contacts.filter(
+    contact =>
+
+      contact.name
+      .toLowerCase()
+      .includes(search.toLowerCase())
+
+  );
+
   return (
-    <div className="container animate-fade-in" style={{ height: 'calc(100vh - 120px)', display: 'flex', gap: '1rem', paddingBottom: '1rem' }}>
-      
-      {/* SIDEBAR - CONTACTS */}
-      <div className="glass" style={{ 
-        width: '320px', 
-        display: 'flex', 
-        flexDirection: 'column',
-        borderRadius: '1.5rem',
-        overflow: 'hidden'
-      }}>
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
-          <h2 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <MessageCircle size={20} color="var(--primary)" />
-            Messages
-          </h2>
-        </div>
-        
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem' }}>
-          {loading ? (
-            <p style={{ padding: '1rem', color: 'var(--text-secondary)' }}>Loading contacts...</p>
-          ) : contacts.length === 0 ? (
-            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-              <p>No connections yet.</p>
-              <p style={{ fontSize: '0.8rem' }}>Accepted mentorship requests will appear here.</p>
+
+    <div className="messages-layout">
+
+      {/* SIDEBAR */}
+
+      <aside className="chat-sidebar">
+
+        {/* HEADER */}
+
+        <div className="sidebar-header">
+
+          <div className="sidebar-title">
+
+            <MessageCircle size={24} />
+
+            <div>
+
+              <h2>Messages</h2>
+
+              <p>
+                Professional conversations
+              </p>
+
             </div>
+
+          </div>
+
+        </div>
+
+        {/* SEARCH */}
+
+        <div className="search-box">
+
+          <Search size={18} />
+
+          <input
+            type="text"
+            placeholder="Search conversations..."
+            value={search}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
+          />
+
+        </div>
+
+        {/* CONTACTS */}
+
+        <div className="contacts-list">
+
+          {loading ? (
+
+            <div className="empty-state">
+              Loading chats...
+            </div>
+
+          ) : filteredContacts.length === 0 ? (
+
+            <div className="empty-state">
+
+              <Sparkles size={40} />
+
+              <p>
+                No active conversations yet.
+              </p>
+
+            </div>
+
           ) : (
-            contacts.map(contact => (
-              <div 
+
+            filteredContacts.map(contact => (
+
+              <div
+
                 key={contact.id}
-                onClick={() => setSelectedContact(contact)}
-                style={{
-                  padding: '1rem',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  transition: 'all 0.2s',
-                  background: selectedContact?.id === contact.id ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-                  border: selectedContact?.id === contact.id ? '1px solid var(--primary)' : '1px solid transparent'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedContact?.id !== contact.id) e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedContact?.id !== contact.id) e.currentTarget.style.background = 'transparent';
-                }}
+
+                className={`
+                contact-item
+                ${
+                  selectedContact?.id === contact.id
+                    ? 'active-contact'
+                    : ''
+                }
+                `}
+
+                onClick={() =>
+                  setSelectedContact(contact)
+                }
+
               >
-                <div style={{
-                  width: '40px', height: '40px', borderRadius: '50%',
-                  background: 'linear-gradient(135deg, var(--primary), #7c3aed)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'
-                }}>
-                  {contact.name[0]}
+
+                {/* AVATAR */}
+
+                <div className="avatar">
+
+                  {contact.name?.[0]}
+
+                  <span className="online-dot"></span>
+
                 </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ margin: 0, fontWeight: '600' }}>{contact.name}</p>
-                  <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
+
+                {/* INFO */}
+
+                <div className="contact-info">
+
+                  <div className="contact-top">
+
+                    <h4>
+                      {contact.name}
+                    </h4>
+
+                    <span>
+                      Active
+                    </span>
+
+                  </div>
+
+                  <p>
                     {contact.role}
                   </p>
+
                 </div>
+
               </div>
+
             ))
+
           )}
+
         </div>
-      </div>
 
-      {/* CHAT AREA */}
-      <div className="glass" style={{ 
-        flex: 1, 
-        display: 'flex', 
-        flexDirection: 'column',
-        borderRadius: '1.5rem',
-        overflow: 'hidden'
-      }}>
+      </aside>
+
+      {/* CHAT WINDOW */}
+
+      <main className="chat-window">
+
         {selectedContact ? (
+
           <>
+
             {/* CHAT HEADER */}
-            <div style={{ 
-              padding: '1rem 1.5rem', 
-              borderBottom: '1px solid var(--border)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem'
-            }}>
-              <div style={{
-                width: '40px', height: '40px', borderRadius: '50%',
-                background: 'linear-gradient(135deg, var(--primary), #7c3aed)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'
-              }}>
-                {selectedContact.name[0]}
+
+            <div className="chat-header">
+
+              <div className="chat-user">
+
+                <div className="avatar big-avatar">
+
+                  {selectedContact.name?.[0]}
+
+                </div>
+
+                <div>
+
+                  <h3>
+                    {selectedContact.name}
+                  </h3>
+
+                  <p>
+                    Active now
+                  </p>
+
+                </div>
+
               </div>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{selectedContact.name}</h3>
-                <span style={{ fontSize: '0.75rem', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success)' }}></div>
-                  Online
-                </span>
+
+              {/* ACTIONS */}
+
+              <div className="chat-actions">
+
+                <button>
+                  <Phone size={18} />
+                </button>
+
+                <button>
+                  <Video size={18} />
+                </button>
+
+                <button>
+                  <MoreVertical size={18} />
+                </button>
+
               </div>
+
             </div>
 
-            {/* MESSAGES LIST */}
-            <div style={{ 
-              flex: 1, 
-              overflowY: 'auto', 
-              padding: '1.5rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1rem'
-            }}>
+            {/* MESSAGES */}
+
+            <div className="messages-container">
+
               {messages.map((msg, index) => {
-                const isMine = msg.sender_id === user.user_id;
+
+                const isMine =
+                  msg.sender_id === user.user_id;
+
                 return (
-                  <div 
+
+                  <div
+
                     key={index}
-                    style={{
-                      alignSelf: isMine ? 'flex-end' : 'flex-start',
-                      maxWidth: '70%',
-                      padding: '0.8rem 1.2rem',
-                      borderRadius: isMine ? '1.25rem 1.25rem 0 1.25rem' : '1.25rem 1.25rem 1.25rem 0',
-                      background: isMine ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
-                      color: 'white',
-                      position: 'relative',
-                      boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
-                    }}
+
+                    className={`
+                    message-row
+                    ${
+                      isMine
+                        ? 'mine'
+                        : 'theirs'
+                    }
+                    `}
+
                   >
-                    <p style={{ margin: 0, lineHeight: '1.5' }}>{msg.content}</p>
-                    <span style={{ 
-                      fontSize: '0.65rem', 
-                      opacity: 0.7, 
-                      display: 'block', 
-                      textAlign: 'right',
-                      marginTop: '4px'
-                    }}>
-                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
+
+                    <div className="message-bubble">
+
+                      <p>
+                        {msg.content}
+                      </p>
+
+                      <div className="message-meta">
+
+                        <span>
+
+                          {new Date(
+                            msg.timestamp
+                          ).toLocaleTimeString(
+                            [],
+                            {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            }
+                          )}
+
+                        </span>
+
+                        {isMine && (
+                          <CheckCheck
+                            size={14}
+                          />
+                        )}
+
+                      </div>
+
+                    </div>
+
                   </div>
+
                 );
+
               })}
-              <div ref={chatEndRef} />
+
+              <div ref={chatEndRef}></div>
+
             </div>
 
-            {/* INPUT AREA */}
-            <form onSubmit={sendMessage} style={{ 
-              padding: '1.5rem', 
-              borderTop: '1px solid var(--border)',
-              display: 'flex',
-              gap: '0.75rem'
-            }}>
-              <input 
+            {/* INPUT */}
+
+            <form
+              className="message-form"
+              onSubmit={sendMessage}
+            >
+
+              <input
+
                 type="text"
-                placeholder="Type your message..."
+
+                placeholder="Write your message..."
+
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                style={{
-                  flex: 1,
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '12px',
-                  padding: '0.75rem 1.25rem',
-                  color: 'white',
-                  outline: 'none'
-                }}
+
+                onChange={(e) =>
+                  setNewMessage(e.target.value)
+                }
+
               />
-              <button 
-                type="submit"
-                style={{
-                  background: 'var(--primary)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '0.75rem 1.5rem',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  cursor: 'pointer'
-                }}
-              >
+
+              <button type="submit">
+
                 <Send size={18} />
-                Send
+
               </button>
+
             </form>
+
           </>
+
         ) : (
-          <div style={{ 
-            flex: 1, 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            color: 'var(--text-secondary)',
-            textAlign: 'center',
-            padding: '2rem'
-          }}>
-            <div style={{ 
-              width: '80px', height: '80px', borderRadius: '50%', 
-              background: 'rgba(255,255,255,0.03)', 
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              marginBottom: '1.5rem'
-            }}>
-              <MessageCircle size={40} opacity={0.2} />
+
+          <div className="chat-placeholder">
+
+            <div className="placeholder-icon">
+
+              <MessageCircle size={60} />
+
             </div>
-            <h3>Your Conversations</h3>
-            <p>Select a contact from the left to start messaging.</p>
+
+            <h2>
+              Your Professional Conversations
+            </h2>
+
+            <p>
+              Select a mentor or mentee to
+              begin chatting.
+            </p>
+
           </div>
+
         )}
-      </div>
+
+      </main>
+
+      {/* CSS */}
+
+      <style>{`
+
+        *{
+          box-sizing:border-box;
+        }
+
+        body{
+          background:#081120;
+          color:white;
+          font-family:Inter,sans-serif;
+        }
+
+        .messages-layout{
+          display:flex;
+          height:100vh;
+          overflow:hidden;
+        }
+
+        /* SIDEBAR */
+
+        .chat-sidebar{
+          width:340px;
+          background:
+          rgba(255,255,255,0.03);
+          border-right:
+          1px solid rgba(255,255,255,0.08);
+          display:flex;
+          flex-direction:column;
+          backdrop-filter:blur(20px);
+        }
+
+        .sidebar-header{
+          padding:1.8rem;
+          border-bottom:
+          1px solid rgba(255,255,255,0.06);
+        }
+
+        .sidebar-title{
+          display:flex;
+          align-items:center;
+          gap:1rem;
+        }
+
+        .sidebar-title p{
+          color:#94a3b8;
+          font-size:0.9rem;
+        }
+
+        /* SEARCH */
+
+        .search-box{
+          margin:1.2rem;
+          display:flex;
+          align-items:center;
+          gap:0.8rem;
+          background:
+          rgba(255,255,255,0.04);
+          border:
+          1px solid rgba(255,255,255,0.08);
+          border-radius:14px;
+          padding:0.9rem 1rem;
+        }
+
+        .search-box input{
+          background:transparent;
+          border:none;
+          outline:none;
+          color:white;
+          width:100%;
+        }
+
+        /* CONTACTS */
+
+        .contacts-list{
+          flex:1;
+          overflow-y:auto;
+          padding:0.5rem;
+        }
+
+        .contact-item{
+          display:flex;
+          align-items:center;
+          gap:1rem;
+          padding:1rem;
+          border-radius:18px;
+          cursor:pointer;
+          transition:0.25s;
+          margin-bottom:0.5rem;
+        }
+
+        .contact-item:hover{
+          background:
+          rgba(255,255,255,0.04);
+        }
+
+        .active-contact{
+          background:
+          rgba(59,130,246,0.12);
+          border:
+          1px solid rgba(59,130,246,0.2);
+        }
+
+        /* AVATAR */
+
+        .avatar{
+          width:52px;
+          height:52px;
+          border-radius:50%;
+          background:
+          linear-gradient(
+          135deg,
+          #2563eb,
+          #7c3aed
+          );
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          font-weight:700;
+          position:relative;
+        }
+
+        .online-dot{
+          position:absolute;
+          bottom:2px;
+          right:2px;
+          width:12px;
+          height:12px;
+          border-radius:50%;
+          background:#10b981;
+          border:2px solid #081120;
+        }
+
+        .big-avatar{
+          width:58px;
+          height:58px;
+          font-size:1.2rem;
+        }
+
+        .contact-info{
+          flex:1;
+        }
+
+        .contact-top{
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+        }
+
+        .contact-top h4{
+          margin:0;
+        }
+
+        .contact-top span{
+          font-size:0.75rem;
+          color:#10b981;
+        }
+
+        .contact-info p{
+          color:#94a3b8;
+          font-size:0.85rem;
+          margin-top:0.3rem;
+          text-transform:capitalize;
+        }
+
+        /* CHAT WINDOW */
+
+        .chat-window{
+          flex:1;
+          display:flex;
+          flex-direction:column;
+          background:
+          linear-gradient(
+          180deg,
+          rgba(15,23,42,0.96),
+          rgba(2,6,23,1)
+          );
+        }
+
+        /* HEADER */
+
+        .chat-header{
+          padding:1.2rem 2rem;
+          border-bottom:
+          1px solid rgba(255,255,255,0.06);
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+        }
+
+        .chat-user{
+          display:flex;
+          align-items:center;
+          gap:1rem;
+        }
+
+        .chat-user p{
+          color:#10b981;
+          font-size:0.85rem;
+        }
+
+        .chat-actions{
+          display:flex;
+          gap:0.8rem;
+        }
+
+        .chat-actions button{
+          width:42px;
+          height:42px;
+          border-radius:14px;
+          border:none;
+          background:
+          rgba(255,255,255,0.05);
+          color:white;
+          cursor:pointer;
+        }
+
+        /* MESSAGES */
+
+        .messages-container{
+          flex:1;
+          overflow-y:auto;
+          padding:2rem;
+          display:flex;
+          flex-direction:column;
+          gap:1rem;
+        }
+
+        .message-row{
+          display:flex;
+        }
+
+        .mine{
+          justify-content:flex-end;
+        }
+
+        .theirs{
+          justify-content:flex-start;
+        }
+
+        .message-bubble{
+          max-width:70%;
+          padding:1rem 1.2rem;
+          border-radius:22px;
+          background:
+          rgba(255,255,255,0.06);
+          line-height:1.6;
+        }
+
+        .mine .message-bubble{
+          background:
+          linear-gradient(
+          135deg,
+          #2563eb,
+          #3b82f6
+          );
+          border-bottom-right-radius:8px;
+        }
+
+        .theirs .message-bubble{
+          border-bottom-left-radius:8px;
+        }
+
+        .message-meta{
+          display:flex;
+          align-items:center;
+          justify-content:flex-end;
+          gap:0.4rem;
+          margin-top:0.5rem;
+          font-size:0.7rem;
+          opacity:0.7;
+        }
+
+        /* INPUT */
+
+        .message-form{
+          padding:1.5rem;
+          border-top:
+          1px solid rgba(255,255,255,0.06);
+          display:flex;
+          gap:1rem;
+        }
+
+        .message-form input{
+          flex:1;
+          background:
+          rgba(255,255,255,0.05);
+          border:
+          1px solid rgba(255,255,255,0.08);
+          border-radius:16px;
+          padding:1rem 1.2rem;
+          color:white;
+          outline:none;
+        }
+
+        .message-form button{
+          width:58px;
+          border:none;
+          border-radius:16px;
+          background:
+          linear-gradient(
+          135deg,
+          #2563eb,
+          #3b82f6
+          );
+          color:white;
+          cursor:pointer;
+        }
+
+        /* EMPTY */
+
+        .chat-placeholder{
+          flex:1;
+          display:flex;
+          flex-direction:column;
+          justify-content:center;
+          align-items:center;
+          text-align:center;
+          color:#94a3b8;
+          padding:2rem;
+        }
+
+        .placeholder-icon{
+          width:120px;
+          height:120px;
+          border-radius:50%;
+          background:
+          rgba(255,255,255,0.04);
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          margin-bottom:2rem;
+        }
+
+        .empty-state{
+          padding:3rem 2rem;
+          text-align:center;
+          color:#94a3b8;
+        }
+
+        @media(max-width:900px){
+
+          .chat-sidebar{
+            width:100%;
+            max-width:320px;
+          }
+
+        }
+
+        @media(max-width:768px){
+
+          .messages-layout{
+            flex-direction:column;
+          }
+
+          .chat-sidebar{
+            width:100%;
+            height:280px;
+          }
+
+        }
+
+      `}</style>
+
     </div>
+
   );
+
 };
 
 export default Messages;
