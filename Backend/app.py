@@ -66,9 +66,15 @@ app.register_blueprint(messages_bp, url_prefix="/api")
 def home():
     return "Backend running with MongoDB Atlas"
 
-# =========================
-# Run Server
-# =========================
-
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    import os
+    env = os.getenv("FLASK_ENV", "development")
+    port = int(os.getenv("PORT", 5001))
+    
+    if env == "production":
+        from waitress import serve
+        print(f"Starting production WSGI server (Waitress) on port {port}...")
+        serve(app, host="0.0.0.0", port=port)
+    else:
+        print(f"Starting development server on port {port}...")
+        app.run(debug=True, host="127.0.0.1", port=port)
