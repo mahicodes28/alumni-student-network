@@ -1,16 +1,59 @@
 from pymongo import MongoClient
+
 from dotenv import load_dotenv
+
 import os
+
 import certifi
+
+# =========================================
+# LOAD ENV
+# =========================================
 
 load_dotenv()
 
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-client = MongoClient(MONGO_URI, tls=True, tlsCAFile=certifi.where(), tlsAllowInvalidCertificates=True)
+# =========================================
+# MONGODB CONNECTION
+# =========================================
+
+MONGO_URI = os.getenv(
+    "MONGO_URI"
+)
+
+client = MongoClient(
+
+    MONGO_URI,
+
+    tls=True,
+
+    tlsCAFile=certifi.where()
+
+)
+
+# =========================================
+# DATABASE
+# =========================================
+
 db = client["alumni_network"]
 
-# Collections
+# =========================================
+# COLLECTIONS
+# =========================================
+
 users_col = db["users"]
+
 profiles_col = db["profiles"]
+
 requests_col = db["requests"]
+
 messages_col = db["messages"]
+
+broadcasts_col = db["broadcasts"]
+
+# =========================================
+# OPTIONAL FUTURE COLLECTIONS
+# =========================================
+
+notifications_col = db["notifications"]
+
+reports_col = db["reports"]
