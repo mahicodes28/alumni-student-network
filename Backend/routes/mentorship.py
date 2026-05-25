@@ -245,6 +245,58 @@ def get_mentees(alumni_id):
 
 
 # =========================================
+# GET CONNECTED MENTORS FOR A STUDENT
+# =========================================
+@mentorship_bp.route("/my-mentors/<student_id>", methods=["GET"])
+def get_my_mentors(student_id):
+
+    s_id = ObjectId(student_id)
+
+    requests = list(
+
+        requests_col.find({
+            "studentId": s_id,
+            "status": "accepted"
+        })
+
+    )
+
+    result = []
+
+    for r in requests:
+
+        alumni = users_col.find_one({
+            "_id": r["alumniId"]
+        })
+
+        profile = profiles_col.find_one({
+            "userId": r["alumniId"]
+        })
+
+        result.append({
+
+            "alumni_id": str(r["alumniId"]),
+
+            "name": alumni.get("name") if alumni else "Unknown",
+
+            "company": profile.get("company", "N/A") if profile else "N/A",
+
+            "skills": profile.get("skills", "") if profile else "",
+
+            "connectedAt": r.get("updatedAt")
+
+        })
+
+    return jsonify({
+
+        "count": len(result),
+
+        "data": result
+
+    }), 200
+
+
+# =========================================
 # ADVANCED STATS
 # =========================================
 @mentorship_bp.route("/advanced-stats/<user_id>", methods=["GET"])

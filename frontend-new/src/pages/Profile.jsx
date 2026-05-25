@@ -15,8 +15,8 @@ import {
   Target,
   Save,
   CheckCircle,
-  Linkedin,
-  Github,
+  ExternalLink,
+  GitBranch,
   Globe,
   Trophy,
   Sparkles,
@@ -419,7 +419,7 @@ const Profile = () => {
         <div className="grid">
 
           <InputField
-            icon={<Linkedin size={16} />}
+            icon={<ExternalLink size={16} />}
             label="LinkedIn"
             value={formData.linkedin}
             placeholder="LinkedIn profile URL"
@@ -432,7 +432,7 @@ const Profile = () => {
           />
 
           <InputField
-            icon={<Github size={16} />}
+            icon={<GitBranch size={16} />}
             label="GitHub"
             value={formData.github}
             placeholder="GitHub URL"

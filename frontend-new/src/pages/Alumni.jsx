@@ -21,14 +21,15 @@ const Alumni = () => {
 
   const { user } = useAuth();
 
-  const [skill, setSkill] = useState('');
-  const [company, setCompany] = useState('');
+  const [query, setQuery] = useState('');
 
   const [results, setResults] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [broadcasts, setBroadcasts] = useState([]);
+  const [connectedMentors, setConnectedMentors] = useState([]);
 
   const [loading, setLoading] = useState(false);
+  const [searched, setSearched] = useState(false);
 
   const [requested, setRequested] = useState({});
 
@@ -36,12 +37,13 @@ const Alumni = () => {
 
   useEffect(() => {
 
-    fetchAlumni();
+    fetchAlumni('');
 
     fetchBroadcasts();
 
     if (user.role === 'student') {
       fetchRecommendations();
+      fetchConnectedMentors();
     }
 
   }, []);
@@ -64,6 +66,24 @@ const Alumni = () => {
 
   };
 
+  const fetchConnectedMentors = async () => {
+
+    try {
+
+      const id = user.user_id || user.id || user._id;
+
+      const res = await api.get(`/my-mentors/${id}`);
+
+      setConnectedMentors(res.data.data || []);
+
+    } catch (err) {
+
+      console.error('Failed to fetch connected mentors', err);
+
+    }
+
+  };
+
   const fetchBroadcasts = async () => {
 
     try {
@@ -80,24 +100,24 @@ const Alumni = () => {
 
   };
 
-  const fetchAlumni = async (
-    searchSkill = '',
-    searchCompany = ''
-  ) => {
+  const fetchAlumni = async (searchTerm = '') => {
 
     setLoading(true);
 
     try {
 
       const res = await api.get(
-        `/alumni?skill=${searchSkill}&company=${searchCompany}`
+        `/alumni?q=${encodeURIComponent(searchTerm)}`
       );
+
+      console.log('fetchAlumni response:', res.data);
 
       setResults(res.data.data || []);
 
     } catch (err) {
 
-      console.error(err);
+      console.error('Error fetching alumni:', err);
+      setResults([]);
 
     } finally {
 
@@ -111,8 +131,14 @@ const Alumni = () => {
 
     e.preventDefault();
 
-    fetchAlumni(skill, company);
+    setSearched(true);
 
+    fetchAlumni(query);
+
+  };
+
+  const isConnected = (alumniId) => {
+    return connectedMentors.some(m => m.alumni_id === alumniId);
   };
 
   const requestMentor = async (alumni_id) => {
@@ -182,26 +208,9 @@ const Alumni = () => {
 
               <input
                 type="text"
-                placeholder="Search by skills..."
-                value={skill}
-                onChange={(e) =>
-                  setSkill(e.target.value)
-                }
-              />
-
-            </div>
-
-            <div className="search-field">
-
-              <Building2 size={18} />
-
-              <input
-                type="text"
-                placeholder="Search by company..."
-                value={company}
-                onChange={(e) =>
-                  setCompany(e.target.value)
-                }
+                placeholder="Search by job title or skills..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
               />
 
             </div>
@@ -335,25 +344,43 @@ const Alumni = () => {
           </div>
         )}
 
-        <div className="grid-cards">
+        {!loading && searched && results.length === 0 && (
+          <div style={{
+            textAlign: 'center',
+            padding: '3rem 2rem',
+            color: '#94a3b8'
+          }}>
+            <h3 style={{ color: '#cbd5e1' }}>No match found</h3>
+            <p>Try searching with different keywords like job titles or skills.</p>
+          </div>
+        )}
 
-          {results.map(alumni => (
+        {!loading && (results.length > 0 || !searched) && (
+          <div className="grid-cards">
 
-            <AlumniCard
-              key={alumni.id}
-              alumni={alumni}
-              requested={requested[alumni.id]}
-              onRequest={() =>
-                requestMentor(alumni.id)
-              }
-              openProfile={() =>
-                setSelectedAlumni(alumni)
-              }
-            />
+          {results.map(alumni => {
 
-          ))}
+            const connected = isConnected(alumni.id);
+
+            return (
+              <AlumniCard
+                key={alumni.id}
+                alumni={alumni}
+                requested={requested[alumni.id]}
+                connected={connected}
+                onRequest={() =>
+                  requestMentor(alumni.id)
+                }
+                openProfile={() =>
+                  setSelectedAlumni(alumni)
+                }
+              />
+            );
+
+          })}
 
         </div>
+        )}
 
       </section>
 
@@ -802,7 +829,8 @@ const AlumniCard = ({
   requested,
   onRequest,
   openProfile,
-  recommended
+  recommended,
+  connected
 }) => (
 
   <div className="mentor-card">
@@ -825,12 +853,30 @@ const AlumniCard = ({
 
     </div>
 
-    {recommended && (
-      <div className="hero-badge">
-        <Star size={14} />
-        {alumni.match}% Match
-      </div>
-    )}
+    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+      {recommended && (
+        <div className="hero-badge">
+          <Star size={14} />
+          {alumni.match}% Match
+        </div>
+      )}
+      {connected && (
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '0.3rem',
+          background: 'rgba(16,185,129,0.12)',
+          color: '#10b981',
+          padding: '0.35rem 0.7rem',
+          borderRadius: '999px',
+          fontSize: '0.75rem',
+          fontWeight: 600
+        }}>
+          <CheckCircle size={12} />
+          Connected
+        </div>
+      )}
+    </div>
 
     <div className="skills-wrap">
 
@@ -859,13 +905,19 @@ const AlumniCard = ({
       <button
         className="mentor-btn"
         onClick={onRequest}
-        disabled={requested}
+        disabled={requested || connected}
+        style={{ opacity: (requested || connected) ? 0.6 : 1, cursor: (requested || connected) ? 'not-allowed' : 'pointer' }}
       >
 
         {requested ? (
           <>
             <CheckCircle size={18} />
             Requested
+          </>
+        ) : connected ? (
+          <>
+            <CheckCircle size={18} />
+            Connected
           </>
         ) : (
           <>

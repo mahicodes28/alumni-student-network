@@ -83,3 +83,18 @@ input {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.5rem;
 }
+
+/* AUTH PAGES BACKGROUND */
+.auth-bg {
+  min-height: 100vh;
+  width: 100%;
+
+  background-image:
+    linear-gradient(rgba(0,0,0,0.72), rgba(0,0,0,0.72)),
+    url("https://png.pngtree.com/background/20250122/original/pngtree-the-internet-and-the-world-are-connected-in-a-blue-background-picture-image_13278188.jpg");
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}

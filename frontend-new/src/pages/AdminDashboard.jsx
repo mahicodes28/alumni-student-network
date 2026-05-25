@@ -23,6 +23,7 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     fetchAdminData();
@@ -86,6 +87,143 @@ const AdminDashboard = () => {
     );
   }
 
+  const menuItems = [
+    { key: 'overview', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
+    { key: 'pending', label: 'Pending Alumni', icon: <Clock size={18} /> , count: pending.length},
+    { key: 'users', label: 'Users', icon: <Users size={18} />, count: users.length},
+    { key: 'broadcasts', label: 'Broadcasts', icon: <Briefcase size={18} /> },
+    { key: 'mentorships', label: 'Mentorships', icon: <MessageSquare size={18} /> },
+    { key: 'analytics', label: 'Analytics', icon: <BarChart3 size={18} /> },
+    { key: 'notifications', label: 'Notifications', icon: <Bell size={18} /> }
+  ];
+
+  const renderOverviewCharts = () => {
+    const metrics = [
+      { label: 'Total Users', value: stats?.total_users || 0 },
+      { label: 'Approved', value: stats?.approved_alumni || 0 },
+      { label: 'Pending', value: stats?.pending_alumni || 0 },
+      { label: 'Broadcasts', value: stats?.broadcasts || 0 },
+      { label: 'Messages', value: stats?.messages || 0 },
+      { label: 'Mentorships', value: stats?.mentorship_requests || 0 }
+    ];
+
+    const max = Math.max(...metrics.map(m => m.value), 1);
+
+    return (
+      <div className="charts-grid">
+
+        <div className="chart-card">
+          <h3>Platform Summary</h3>
+          <div className="bar-list">
+            {metrics.map(m => (
+              <div key={m.label} className="bar-row">
+                <div className="bar-label">{m.label}</div>
+                <div className="bar-wrap">
+                  <div className="bar-fill" style={{ width: `${(m.value / max) * 100}%` }} />
+                </div>
+                <div className="bar-value">{m.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="chart-card">
+          <h3>Engagement Overview</h3>
+          <p style={{ color: '#94a3b8' }}>Quick glance metrics and trends.</p>
+          <div style={{ height: 180 }}>
+            {/* simple sparkline-like SVG */}
+            <svg viewBox="0 0 100 30" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
+              <polyline
+                fill="none"
+                stroke="#60a5fa"
+                strokeWidth="2"
+                points={stats ? stats_trend_points(stats) : ''}
+              />
+            </svg>
+          </div>
+        </div>
+
+      </div>
+    );
+  };
+
+  const stats_trend_points = (s) => {
+    // create 8 sample points from available stats for a simple sparkline
+    const values = [s?.total_users || 0, s?.approved_alumni || 0, s?.pending_alumni || 0, s?.broadcasts || 0, s?.messages || 0, s?.mentorship_requests || 0, s?.total_users || 0];
+    const max = Math.max(...values, 1);
+    return values.map((v, i) => `${(i/(values.length-1))*100},${30 - (v/max)*28}`).join(' ');
+  };
+
+  const renderContent = () => {
+    switch(activeTab) {
+      case 'overview':
+        return (
+          <>
+            {stats && renderOverviewCharts()}
+          </>
+        );
+      case 'pending':
+        return (
+          <section className="glass-card">
+            <div className="section-header"><h2>Pending Alumni Verification</h2></div>
+            {pending.length === 0 ? (
+              <div className="empty-state"><UserCheck size={50} /><p>No pending alumni approvals.</p></div>
+            ) : (
+              <table className="admin-table">{/* ... reuse existing table markup */}
+                <thead>
+                  <tr><th>Name</th><th>Email</th><th>Registered</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                  {pending.map(user => (
+                    <tr key={user.id}>
+                      <td>{user.name}</td>
+                      <td>{user.email}</td>
+                      <td>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</td>
+                      <td>
+                        <div className="action-buttons">
+                          <button className="approve-btn" onClick={() => handleApproval(user.id, 'approve')}><UserCheck size={16}/> Approve</button>
+                          <button className="reject-btn" onClick={() => handleApproval(user.id, 'reject')}><UserX size={16}/> Reject</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
+        );
+      case 'users':
+        return (
+          <section className="glass-card">
+            <div className="section-header"><h2>All Platform Users</h2></div>
+            <table className="admin-table">
+              <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody>
+                {filteredUsers.map(user => (
+                  <tr key={user.id}>
+                    <td>{user.name}</td>
+                    <td>{user.email}</td>
+                    <td><span className="role-pill">{user.role}</span></td>
+                    <td><span className={`status-pill ${user.status}`}>{user.status}</span></td>
+                    <td><button className="delete-btn" onClick={() => deleteUser(user.id)}><Trash2 size={16}/></button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        );
+      case 'analytics':
+        return (
+          <section className="glass-card">
+            <h2>Analytics</h2>
+            {stats && renderOverviewCharts()}
+          </section>
+        );
+      default:
+        return <div />;
+    }
+  };
+
   return (
     <div className="admin-layout">
 
@@ -100,13 +238,13 @@ const AdminDashboard = () => {
 
         <nav className="sidebar-nav">
 
-          <SidebarItem icon={<LayoutDashboard size={20} />} label="Dashboard" active />
-          <SidebarItem icon={<Clock size={20} />} label="Pending Alumni" />
-          <SidebarItem icon={<Users size={20} />} label="Users" />
-          <SidebarItem icon={<Briefcase size={20} />} label="Broadcasts" />
-          <SidebarItem icon={<MessageSquare size={20} />} label="Mentorships" />
-          <SidebarItem icon={<BarChart3 size={20} />} label="Analytics" />
-          <SidebarItem icon={<Bell size={20} />} label="Notifications" />
+          {menuItems.map(item => (
+            <div key={item.key} className={`sidebar-item ${activeTab === item.key ? 'active' : ''}`} onClick={() => setActiveTab(item.key)}>
+              {item.icon}
+              <span>{item.label}</span>
+              {item.count !== undefined && <span style={{marginLeft:'auto', color:'#94a3b8'}}>{item.count}</span>}
+            </div>
+          ))}
 
         </nav>
 
@@ -140,190 +278,7 @@ const AdminDashboard = () => {
 
         </header>
 
-        {/* STATS */}
-
-        {stats && (
-          <section className="stats-grid">
-
-            <StatCard
-              icon={<Users />}
-              label="Total Users"
-              value={stats.total_users}
-            />
-
-            <StatCard
-              icon={<UserCheck />}
-              label="Approved Alumni"
-              value={stats.approved_alumni}
-            />
-
-            <StatCard
-              icon={<Clock />}
-              label="Pending Alumni"
-              value={stats.pending_alumni}
-            />
-
-            <StatCard
-              icon={<Briefcase />}
-              label="Broadcast Posts"
-              value={stats.broadcasts}
-            />
-
-            <StatCard
-              icon={<MessageSquare />}
-              label="Messages"
-              value={stats.messages}
-            />
-
-            <StatCard
-              icon={<BarChart3 />}
-              label="Mentorship Requests"
-              value={stats.mentorship_requests}
-            />
-
-          </section>
-        )}
-
-        {/* PENDING APPROVALS */}
-
-        <section className="glass-card">
-
-          <div className="section-header">
-            <h2>Pending Alumni Verification</h2>
-          </div>
-
-          {pending.length === 0 ? (
-            <div className="empty-state">
-              <UserCheck size={50} />
-              <p>No pending alumni approvals.</p>
-            </div>
-          ) : (
-            <table className="admin-table">
-
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Registered</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-
-              <tbody>
-
-                {pending.map(user => (
-
-                  <tr key={user.id}>
-
-                    <td>{user.name}</td>
-
-                    <td>{user.email}</td>
-
-                    <td>
-                      {user.createdAt
-                        ? new Date(user.createdAt).toLocaleDateString()
-                        : 'N/A'}
-                    </td>
-
-                    <td>
-
-                      <div className="action-buttons">
-
-                        <button
-                          className="approve-btn"
-                          onClick={() => handleApproval(user.id, 'approve')}
-                        >
-                          <UserCheck size={16} />
-                          Approve
-                        </button>
-
-                        <button
-                          className="reject-btn"
-                          onClick={() => handleApproval(user.id, 'reject')}
-                        >
-                          <UserX size={16} />
-                          Reject
-                        </button>
-
-                      </div>
-
-                    </td>
-
-                  </tr>
-
-                ))}
-
-              </tbody>
-
-            </table>
-          )}
-
-        </section>
-
-        {/* USERS */}
-
-        <section className="glass-card">
-
-          <div className="section-header">
-            <h2>All Platform Users</h2>
-          </div>
-
-          <table className="admin-table">
-
-            <thead>
-
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {filteredUsers.map(user => (
-
-                <tr key={user.id}>
-
-                  <td>{user.name}</td>
-
-                  <td>{user.email}</td>
-
-                  <td>
-                    <span className="role-pill">
-                      {user.role}
-                    </span>
-                  </td>
-
-                  <td>
-                    <span className={`status-pill ${user.status}`}>
-                      {user.status}
-                    </span>
-                  </td>
-
-                  <td>
-
-                    <button
-                      className="delete-btn"
-                      onClick={() => deleteUser(user.id)}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-
-                  </td>
-
-                </tr>
-
-              ))}
-
-            </tbody>
-
-          </table>
-
-        </section>
+        {renderContent()}
 
       </main>
 

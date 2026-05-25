@@ -19,13 +19,14 @@ def search_alumni():
 
     skill = request.args.get("skill", "").lower()
     company = request.args.get("company", "").lower()
+    q = request.args.get("q", "").strip()
 
     pipeline = [
 
         {
             "$match": {
-                "role": "alumni",
-                "status": "approved"
+                "role": "alumni"
+                # Removed status check to show all alumni for testing
             }
         },
 
@@ -47,6 +48,28 @@ def search_alumni():
 
     ]
 
+    # If a combined query `q` is provided, add a regex match stage
+    # to match against profile.skills, profile.company, or user name (case-insensitive)
+    if q:
+        pipeline.append({
+            "$match": {
+                "$or": [
+                    {"profile.skills": {"$regex": q, "$options": "i"}},
+                    {"profile.company": {"$regex": q, "$options": "i"}},
+                    {"name": {"$regex": q, "$options": "i"}}
+                ]
+            }
+        })
+    else:
+        # If separate skill/company filters are provided, match them if non-empty
+        sconds = []
+        if skill:
+            sconds.append({"profile.skills": {"$regex": skill, "$options": "i"}})
+        if company:
+            sconds.append({"profile.company": {"$regex": company, "$options": "i"}})
+        if sconds:
+            pipeline.append({"$match": {"$and": sconds}})
+
     alumni_list = list(users_col.aggregate(pipeline))
 
     results = []
@@ -54,15 +77,6 @@ def search_alumni():
     for a in alumni_list:
 
         profile = a.get("profile", {})
-
-        skills = profile.get("skills", "").lower()
-        comp = profile.get("company", "").lower()
-
-        if skill and skill not in skills:
-            continue
-
-        if company and company not in comp:
-            continue
 
         results.append({
             "id": str(a["_id"]),
@@ -73,6 +87,12 @@ def search_alumni():
             "bio": profile.get("bio", ""),
             "linkedin": profile.get("linkedin", "")
         })
+
+    # debug log: print number of results for the query
+    try:
+        print(f"Alumni search q='{q}' skill='{skill}' company='{company}' -> {len(results)} results")
+    except Exception:
+        pass
 
     return jsonify({
         "count": len(results),

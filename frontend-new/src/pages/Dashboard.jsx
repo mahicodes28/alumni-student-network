@@ -131,57 +131,6 @@ const Dashboard = () => {
 
     <div className="dashboard-layout">
 
-      {/* SIDEBAR */}
-
-      <aside className="sidebar">
-
-        <div className="logo-box">
-
-          <Sparkles size={28} />
-
-          <h2>AlumniConnect</h2>
-
-        </div>
-
-        <nav className="sidebar-nav">
-
-          <SidebarItem
-            icon={<BarChart3 size={20} />}
-            label="Dashboard"
-            active
-          />
-
-          <SidebarItem
-            icon={<Users size={20} />}
-            label="Mentorship"
-          />
-
-          <SidebarItem
-            icon={<MessageSquare size={20} />}
-            label="Messages"
-          />
-
-          <SidebarItem
-            icon={<BriefcaseBusiness size={20} />}
-            label="Opportunities"
-          />
-
-          <SidebarItem
-            icon={<UserIcon size={20} />}
-            label="Profile"
-          />
-
-          <SidebarItem
-            icon={<Bell size={20} />}
-            label="Notifications"
-          />
-
-        </nav>
-
-      </aside>
-
-      {/* MAIN */}
-
       <main className="dashboard-main">
 
         {/* HEADER */}
@@ -301,7 +250,7 @@ const Dashboard = () => {
                   Mentorship Requests
                 </h2>
 
-                <Link to="/requests">
+                <Link to="/mentors">
                   View All
                 </Link>
 
@@ -344,7 +293,7 @@ const Dashboard = () => {
                   Career Opportunities
                 </h2>
 
-                <Link to="/opportunities">
+                <Link to="/broadcasts">
                   Explore
                 </Link>
 
@@ -426,7 +375,7 @@ const Dashboard = () => {
                 <ActionButton
                   icon={<BriefcaseBusiness size={18} />}
                   label="Opportunities"
-                  to="/opportunities"
+                  to="/broadcasts"
                 />
 
               </div>

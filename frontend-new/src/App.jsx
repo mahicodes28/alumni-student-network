@@ -42,6 +42,8 @@ import AdminDashboard from './pages/AdminDashboard';
 
 import BroadcastFeed from './pages/BroadcastFeed';
 
+import Mentors from './pages/Mentors';
+
 // =========================================
 // COMPONENTS
 // =========================================
@@ -64,6 +66,21 @@ const ProtectedRoute = ({
       <Navigate to="/login" />
     );
 
+  }
+
+  return children;
+
+};
+
+// Route that shows admin dashboard when logged-in user is admin
+const DashboardRoute = ({ children }) => {
+
+  const { user } = useAuth();
+
+  if (!user) return <Navigate to="/login" />;
+
+  if (user.role === 'admin') {
+    return <AdminDashboard />;
   }
 
   return children;
@@ -145,11 +162,11 @@ function App() {
               path="/dashboard"
               element={
 
-                <ProtectedRoute>
+                <DashboardRoute>
 
                   <Dashboard />
 
-                </ProtectedRoute>
+                </DashboardRoute>
 
               }
             />
@@ -212,6 +229,27 @@ function App() {
                 </ProtectedRoute>
 
               }
+            />
+
+            <Route
+              path="/mentors"
+              element={
+                <ProtectedRoute>
+                  <Mentors />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Legacy / convenience redirects */}
+
+            <Route
+              path="/opportunities"
+              element={<Navigate to="/broadcasts" />}
+            />
+
+            <Route
+              path="/requests"
+              element={<Navigate to="/messages" />}
             />
 
             {/* ADMIN */}
