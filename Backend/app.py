@@ -34,12 +34,7 @@ if not MONGO_URI:
 
 try:
 
-    client = MongoClient(
-        MONGO_URI,
-        tls=True,
-        tlsCAFile=certifi.where()
-    )
-
+    client = MongoClient(MONGO_URI)
     # TEST CONNECTION
     client.admin.command("ping")
 
