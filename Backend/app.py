@@ -27,7 +27,7 @@ CORS(app)
 # MONGODB ATLAS CONFIG
 # =========================================
 
-MONGO_URI = os.getenv("MONGO_URI")
+MONGO_URI = os.getenv("MONGO_URI") or os.getenv("MONGO_URL")
 
 if not MONGO_URI:
     raise Exception("MONGO_URI not found in environment variables")
