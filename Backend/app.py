@@ -3,7 +3,6 @@ from flask_cors import CORS
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
-import certifi
 
 # =========================================
 # LOAD ENV VARIABLES
@@ -17,14 +16,13 @@ load_dotenv()
 
 app = Flask(
     __name__,
-    static_folder="static",
-    static_url_path=""
+    static_folder="static"
 )
 
 CORS(app)
 
 # =========================================
-# MONGODB ATLAS CONFIG
+# MONGODB CONFIG
 # =========================================
 
 MONGO_URI = os.getenv("MONGO_URI") or os.getenv("MONGO_URL")
@@ -35,10 +33,11 @@ if not MONGO_URI:
 try:
 
     client = MongoClient(MONGO_URI)
+
     # TEST CONNECTION
     client.admin.command("ping")
 
-    print("MongoDB Atlas connected successfully")
+    print("MongoDB connected successfully")
 
 except Exception as e:
 
@@ -76,7 +75,7 @@ app.register_blueprint(messages_bp, url_prefix="/api")
 app.register_blueprint(broadcasts_bp, url_prefix="/api")
 
 # =========================================
-# API HEALTH ROUTES
+# API ROUTES
 # =========================================
 
 @app.route("/api")
@@ -84,7 +83,7 @@ def api_home():
 
     return jsonify({
         "message": "AlumniConnect Backend Running",
-        "database": "MongoDB Atlas Connected",
+        "database": "Connected",
         "status": "success"
     })
 
@@ -93,8 +92,7 @@ def health_check():
 
     return jsonify({
         "server": "running",
-        "database": "connected",
-        "environment": os.getenv("FLASK_ENV", "production")
+        "status": "healthy"
     })
 
 # =========================================
@@ -103,27 +101,28 @@ def health_check():
 
 @app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
-def serve_react(path):
+def serve(path):
 
-    static_folder_path = app.static_folder
-
-    requested_path = os.path.join(
-        static_folder_path,
-        path
+    static_dir = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "static"
     )
 
-    # Serve static assets if they exist
-    if path != "" and os.path.exists(requested_path):
-        return send_from_directory(
-            static_folder_path,
-            path
-        )
+    requested_file = os.path.join(static_dir, path)
 
-    # Otherwise serve React index.html
-    return send_from_directory(
-        static_folder_path,
-        "index.html"
-    )
+    # Serve static files if they exist
+    if path != "" and os.path.exists(requested_file):
+        return send_from_directory(static_dir, path)
+
+    # Serve React index.html
+    index_path = os.path.join(static_dir, "index.html")
+
+    if os.path.exists(index_path):
+        return send_from_directory(static_dir, "index.html")
+
+    return jsonify({
+        "error": "index.html not found"
+    }), 404
 
 # =========================================
 # MAIN SERVER
@@ -131,9 +130,7 @@ def serve_react(path):
 
 if __name__ == "__main__":
 
-    port = int(
-        os.getenv("PORT", 5000)
-    )
+    port = int(os.getenv("PORT", 8080))
 
     print(f"Server running on port {port}")
 
