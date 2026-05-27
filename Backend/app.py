@@ -22,17 +22,12 @@ app = Flask(
 CORS(app)
 
 # =========================================
-# MONGODB CONFIG
+# MONGODB CONFIG & DATABASE
 # =========================================
 
-MONGO_URI = os.getenv("MONGO_URI") or os.getenv("MONGO_URL")
-
-if not MONGO_URI:
-    raise Exception("MONGO_URI not found in environment variables")
+from db import client, db
 
 try:
-
-    client = MongoClient(MONGO_URI)
 
     # TEST CONNECTION
     client.admin.command("ping")
@@ -43,12 +38,6 @@ except Exception as e:
 
     print("MongoDB connection error:", e)
     raise e
-
-# =========================================
-# DATABASE
-# =========================================
-
-db = client["alumni_network"]
 
 # =========================================
 # IMPORT ROUTES

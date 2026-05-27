@@ -16,9 +16,7 @@ load_dotenv()
 # MONGODB CONNECTION
 # =========================================
 
-MONGO_URI = os.getenv(
-    "MONGO_URI"
-)
+MONGO_URI = os.getenv("MONGO_URI") or os.getenv("MONGO_URL")
 
 client = MongoClient(
 
