@@ -18,15 +18,15 @@ load_dotenv()
 
 MONGO_URI = os.getenv("MONGO_URI") or os.getenv("MONGO_URL")
 
-client = MongoClient(
-
-    MONGO_URI,
-
-    tls=True,
-
-    tlsCAFile=certifi.where()
-
-)
+# Dynamically configure TLS/SSL based on the connection URI type
+if MONGO_URI and MONGO_URI.startswith("mongodb+srv://"):
+    client = MongoClient(
+        MONGO_URI,
+        tls=True,
+        tlsCAFile=certifi.where()
+    )
+else:
+    client = MongoClient(MONGO_URI)
 
 # =========================================
 # DATABASE
