@@ -1,6 +1,5 @@
 from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
-from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
 
@@ -83,6 +82,10 @@ def health_check():
         "server": "running",
         "status": "healthy"
     })
+
+@app.route("/")
+def home():
+    return "Server Running"
 
 # =========================================
 # SERVE REACT FRONTEND
