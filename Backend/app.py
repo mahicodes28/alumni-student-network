@@ -83,10 +83,6 @@ def health_check():
         "status": "healthy"
     })
 
-@app.route("/")
-def home():
-    return "Server Running"
-
 # =========================================
 # SERVE REACT FRONTEND
 # =========================================
