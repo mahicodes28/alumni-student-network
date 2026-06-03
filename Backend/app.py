@@ -27,14 +27,10 @@ CORS(app)
 from db import client, db
 
 try:
-
-    # TEST CONNECTION
     client.admin.command("ping")
-
     print("MongoDB connected successfully")
 
 except Exception as e:
-
     print("MongoDB connection error:", e)
     raise e
 
@@ -65,12 +61,11 @@ app.register_blueprint(broadcasts_bp, url_prefix="/api")
 app.register_blueprint(ai_bp, url_prefix="/api")
 
 # =========================================
-# API ROUTES
+# API HEALTH ROUTES
 # =========================================
 
 @app.route("/api")
 def api_home():
-
     return jsonify({
         "message": "AlumniConnect Backend Running",
         "database": "Connected",
@@ -78,20 +73,11 @@ def api_home():
     })
 
 @app.route("/health")
-def health_check():
-
+def health():
     return jsonify({
         "server": "running",
         "status": "healthy"
     })
-
-@app.route("/")
-def home():
-    return "Server Running"
-
-@app.route("/health")
-def health():
-    return {"status": "ok"}
 
 # =========================================
 # SERVE REACT FRONTEND
@@ -106,20 +92,20 @@ def serve(path):
         "static"
     )
 
+    # Serve static assets
     requested_file = os.path.join(static_dir, path)
 
-    # Serve static files if they exist
-    if path != "" and os.path.exists(requested_file):
+    if path and os.path.exists(requested_file):
         return send_from_directory(static_dir, path)
 
-    # Serve React index.html
+    # Serve React app
     index_path = os.path.join(static_dir, "index.html")
 
     if os.path.exists(index_path):
         return send_from_directory(static_dir, "index.html")
 
     return jsonify({
-        "error": "index.html not found"
+        "error": "Frontend build not found. Run npm run build."
     }), 404
 
 # =========================================
@@ -134,5 +120,6 @@ if __name__ == "__main__":
 
     app.run(
         host="0.0.0.0",
-        port=port
+        port=port,
+        debug=False
     )
