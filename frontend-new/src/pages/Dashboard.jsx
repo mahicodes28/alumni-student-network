@@ -18,7 +18,8 @@ import {
   Bell,
   BarChart3,
   GraduationCap,
-  ArrowRight
+  ArrowRight,
+  Star
 } from 'lucide-react';
 
 import ProfileStrength from '../components/ProfileStrength';
@@ -31,6 +32,8 @@ const Dashboard = () => {
   const [requests, setRequests] = useState([]);
   const [profile, setProfile] = useState(null);
   const [broadcasts, setBroadcasts] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
+  const [requestedMentors, setRequestedMentors] = useState({});
 
   const [loading, setLoading] = useState(true);
 
@@ -47,32 +50,27 @@ const Dashboard = () => {
         user.id ||
         user._id;
 
-      const [
-        statsRes,
-        reqsRes,
-        profileRes,
-        broadcastRes
-      ] = await Promise.all([
-
+      const promises = [
         api.get(`/advanced-stats/${id}`),
-
         api.get(`/requests/${id}`),
-
         api.get(`/profile/${id}`),
-
         api.get('/broadcasts')
+      ];
 
-      ]);
+      if (user.role === 'student') {
+        promises.push(api.get(`/recommendations/${id}`));
+      }
 
-      setStats(statsRes.data);
+      const results = await Promise.all(promises);
 
-      setRequests(reqsRes.data.data);
+      setStats(results[0].data);
+      setRequests(results[1].data.data);
+      setProfile(results[2].data);
+      setBroadcasts(results[3].data.data || []);
 
-      setProfile(profileRes.data);
-
-      setBroadcasts(
-        broadcastRes.data.data || []
-      );
+      if (user.role === 'student' && results[4]) {
+        setRecommendations(results[4].data.data || []);
+      }
 
     } catch (err) {
 
@@ -109,6 +107,24 @@ const Dashboard = () => {
 
     }
 
+  };
+
+  const handleRequestMentor = async (alumniId) => {
+    try {
+      const studentId = user.user_id || user.id || user._id;
+      await api.post('/request', {
+        student_id: studentId,
+        alumni_id: alumniId
+      });
+      setRequestedMentors(prev => ({
+        ...prev,
+        [alumniId]: true
+      }));
+      alert('Connection request sent successfully!');
+    } catch (err) {
+      console.error('Failed to request mentorship:', err);
+      alert(err.response?.data?.error || 'Failed to send request');
+    }
   };
 
   if (loading) {
@@ -240,6 +256,53 @@ const Dashboard = () => {
 
           <div className="left-panel">
 
+            {/* AI RECOMMENDATIONS */}
+
+            {user.role === 'student' && recommendations.length > 0 && (
+              <section className="glass-card recommendation-widget">
+                <div className="section-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Sparkles size={20} style={{ color: '#a78bfa' }} />
+                    <h2>AI Recommended Mentors</h2>
+                  </div>
+                  <Link to="/alumni">Explore All</Link>
+                </div>
+                <div className="rec-mentors-list">
+                  {recommendations.slice(0, 3).map(mentor => (
+                    <div key={mentor.id} className="rec-mentor-card">
+                      <div className="rec-mentor-info">
+                        <div className="rec-mentor-avatar">
+                          {mentor.name?.[0]}
+                        </div>
+                        <div>
+                          <h4>{mentor.name}</h4>
+                          <p>{mentor.company} • {mentor.experience} Exp</p>
+                          <div className="rec-skills">
+                            {mentor.skills?.split(',').slice(0, 2).map((s, i) => (
+                              <span key={i} className="rec-skill-tag">{s.trim()}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="rec-mentor-action">
+                        <div className="match-badge">
+                          <Star size={12} fill="#fbbf24" color="#fbbf24" style={{ marginRight: '2px' }} />
+                          <span>{mentor.match}% Match</span>
+                        </div>
+                        <button 
+                          className="quick-connect-btn"
+                          onClick={() => handleRequestMentor(mentor.id)}
+                          disabled={requestedMentors[mentor.id]}
+                        >
+                          {requestedMentors[mentor.id] ? 'Sent' : 'Connect'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* REQUESTS */}
 
             <section className="glass-card">
@@ -356,6 +419,16 @@ const Dashboard = () => {
                     icon={<Search size={18} />}
                     label="Find Mentors"
                     to="/alumni"
+                  />
+
+                )}
+
+                {user.role === 'student' && (
+
+                  <ActionButton
+                    icon={<Sparkles size={18} style={{ color: '#a78bfa' }} />}
+                    label="Career AI Assistant"
+                    to="/career-assistant"
                   />
 
                 )}
@@ -701,6 +774,121 @@ const Dashboard = () => {
             gap:1rem;
           }
 
+        }
+
+        /* AI RECOMMENDATIONS WIDGET */
+        .recommendation-widget {
+          border-color: rgba(167, 139, 250, 0.2);
+        }
+
+        .rec-mentors-list {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          margin-top: 1rem;
+        }
+
+        .rec-mentor-card {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 16px;
+          transition: all 0.2s;
+        }
+
+        .rec-mentor-card:hover {
+          background: rgba(255, 255, 255, 0.04);
+          border-color: rgba(167, 139, 250, 0.15);
+        }
+
+        .rec-mentor-info {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+
+        .rec-mentor-avatar {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(135deg, #a78bfa, #3b82f6);
+          font-weight: 700;
+          font-size: 1.15rem;
+          color: white;
+        }
+
+        .rec-mentor-info h4 {
+          margin: 0 0 0.2rem 0;
+          font-size: 0.95rem;
+          font-weight: 600;
+        }
+
+        .rec-mentor-info p {
+          margin: 0;
+          font-size: 0.8rem;
+          color: #94a3b8;
+        }
+
+        .rec-skills {
+          display: flex;
+          gap: 0.4rem;
+          margin-top: 0.4rem;
+        }
+
+        .rec-skill-tag {
+          font-size: 0.7rem;
+          padding: 0.15rem 0.5rem;
+          background: rgba(59, 130, 246, 0.12);
+          color: #60a5fa;
+          border-radius: 999px;
+        }
+
+        .rec-mentor-action {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 0.5rem;
+        }
+
+        .match-badge {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+          background: rgba(245, 158, 11, 0.12);
+          color: #fbbf24;
+          padding: 0.25rem 0.5rem;
+          border-radius: 6px;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+
+        .quick-connect-btn {
+          border: none;
+          background: #2563eb;
+          color: white;
+          padding: 0.4rem 0.8rem;
+          border-radius: 8px;
+          font-size: 0.8rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .quick-connect-btn:hover:not(:disabled) {
+          background: #3b82f6;
+          transform: scale(1.03);
+        }
+
+        .quick-connect-btn:disabled {
+          background: rgba(255, 255, 255, 0.04);
+          color: #64748b;
+          cursor: not-allowed;
         }
 
       `}</style>

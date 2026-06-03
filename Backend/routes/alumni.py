@@ -8,6 +8,8 @@ from db import (
 
 from bson import ObjectId
 from datetime import datetime
+import math
+import re
 
 alumni_bp = Blueprint("alumni", __name__)
 
@@ -141,6 +143,12 @@ def get_alumni_profile(alumni_id):
 # =========================================
 # RECOMMENDATIONS
 # =========================================
+def clean_text(text):
+    if not text:
+        return []
+    words = re.findall(r'\b\w+\b', text.lower())
+    return words
+
 @alumni_bp.route("/recommendations/<student_id>", methods=["GET"])
 def get_recommendations(student_id):
 
@@ -153,28 +161,13 @@ def get_recommendations(student_id):
     if not student_profile:
         return jsonify({"data": []}), 200
 
-    student_keywords = set(
-
-        (
-            student_profile.get("skills", "") +
-            " " +
-            student_profile.get("interests", "")
-        )
-
-        .lower()
-        .replace(",", " ")
-        .split()
-    )
-
     pipeline = [
-
         {
             "$match": {
                 "role": "alumni",
                 "status": "approved"
             }
         },
-
         {
             "$lookup": {
                 "from": "profiles",
@@ -183,57 +176,118 @@ def get_recommendations(student_id):
                 "as": "profile"
             }
         },
-
         {
             "$unwind": "$profile"
         }
-
     ]
 
     alumni_list = list(users_col.aggregate(pipeline))
 
-    recommendations = []
-
-    for a in alumni_list:
-
-        alumni_profile = a.get("profile", {})
-
-        alumni_skills = set(
-
-            alumni_profile
-            .get("skills", "")
-            .lower()
-            .replace(",", " ")
-            .split()
-
-        )
-
-        if not student_keywords:
-            continue
-
-        matches = student_keywords.intersection(alumni_skills)
-
-        match_score = int(
-            (len(matches) / len(student_keywords)) * 100
-        )
-
-        if match_score > 0:
-
+    # Retrieve student profile fields
+    s_skills = clean_text(student_profile.get("skills", ""))
+    s_interests = clean_text(student_profile.get("interests", ""))
+    s_career_goal = clean_text(student_profile.get("career_goal", ""))
+    s_domain = clean_text(student_profile.get("domain", ""))
+    s_bio = clean_text(student_profile.get("bio", ""))
+    
+    # Weight key fields by repeating them
+    student_words = s_skills * 3 + s_interests * 2 + s_career_goal * 2 + s_domain * 2 + s_bio
+    
+    if not student_words:
+        recommendations = []
+        for a in alumni_list:
+            profile = a.get("profile", {}) or {}
             recommendations.append({
-
                 "id": str(a["_id"]),
                 "name": a.get("name"),
-
-                "skills": alumni_profile.get("skills", ""),
-
-                "match": match_score,
-
-                "company": alumni_profile.get("company", "N/A"),
-
-                "experience": alumni_profile.get("experience", "N/A")
-
+                "skills": profile.get("skills", ""),
+                "match": 0,
+                "company": profile.get("company", "N/A"),
+                "experience": profile.get("experience", "N/A")
             })
+        return jsonify({"data": recommendations[:5]}), 200
+        
+    alumni_docs = []
+    for a in alumni_list:
+        profile = a.get("profile", {}) or {}
+        a_skills = clean_text(profile.get("skills", ""))
+        a_interests = clean_text(profile.get("interests", ""))
+        a_domain = clean_text(profile.get("domain", ""))
+        a_company = clean_text(profile.get("company", ""))
+        a_experience = clean_text(profile.get("experience", ""))
+        a_bio = clean_text(profile.get("bio", ""))
+        
+        # Weight alumni fields similarly
+        alumni_words = a_skills * 3 + a_interests * 2 + a_domain * 2 + a_company * 2 + a_experience + a_bio
+        alumni_docs.append((a, alumni_words))
+        
+    all_docs = [student_words] + [words for _, words in alumni_docs]
+    N = len(all_docs)
+    
+    # Document Frequency
+    df = {}
+    for doc in all_docs:
+        seen = set(doc)
+        for w in seen:
+            df[w] = df.get(w, 0) + 1
+            
+    # Inverse Document Frequency
+    idf = {}
+    for w, count in df.items():
+        idf[w] = math.log(1 + N / (1 + count))
+        
+    def get_tfidf_vector(words):
+        if not words:
+            return {}
+        tf = {}
+        for w in words:
+            tf[w] = tf.get(w, 0) + 1
+        
+        vector = {}
+        for w, count in tf.items():
+            vector[w] = (count / len(words)) * idf.get(w, 0)
+        return vector
+        
+    student_vector = get_tfidf_vector(student_words)
+    student_mag = math.sqrt(sum(v**2 for v in student_vector.values()))
+    
+    recommendations = []
+    for a, words in alumni_docs:
+        profile = a.get("profile", {}) or {}
+        if not words:
+            match_score = 0
+        else:
+            alumni_vector = get_tfidf_vector(words)
+            dot_product = 0.0
+            for w in student_vector:
+                if w in alumni_vector:
+                    dot_product += student_vector[w] * alumni_vector[w]
+            
+            alumni_mag = math.sqrt(sum(v**2 for v in alumni_vector.values()))
+            if student_mag * alumni_mag == 0:
+                similarity = 0.0
+            else:
+                similarity = dot_product / (student_mag * alumni_mag)
+            
+            match_score = int(round(similarity * 100))
+            
+        student_domain_val = student_profile.get("domain", "").strip().lower()
+        alumni_domain_val = profile.get("domain", "").strip().lower()
+        if student_domain_val and alumni_domain_val and student_domain_val == alumni_domain_val:
+            match_score = max(match_score, 15)
+            
+        match_score = min(match_score, 100)
 
+        recommendations.append({
+            "id": str(a["_id"]),
+            "name": a.get("name"),
+            "skills": profile.get("skills", ""),
+            "match": match_score,
+            "company": profile.get("company", "N/A"),
+            "experience": profile.get("experience", "N/A")
+        })
+        
+    # Sort by match score descending
     recommendations.sort(
         key=lambda x: x["match"],
         reverse=True

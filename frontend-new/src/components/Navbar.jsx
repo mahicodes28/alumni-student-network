@@ -95,6 +95,20 @@ const Navbar = () => {
 
             </Link>
 
+            {/* CAREER AI */}
+
+            <Link
+              to="/career-assistant"
+              className="nav-link"
+              style={{ color: '#a78bfa' }}
+            >
+
+              <Sparkles size={18} />
+
+              Career AI
+
+            </Link>
+
             {/* STUDENT */}
 
             {user.role === 'student' && (

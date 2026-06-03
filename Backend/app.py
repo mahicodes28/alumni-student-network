@@ -49,6 +49,7 @@ from routes.mentorship import mentorship_bp
 from routes.admin import admin_bp
 from routes.messages import messages_bp
 from routes.broadcasts import broadcasts_bp
+from routes.ai import ai_bp
 
 # =========================================
 # REGISTER BLUEPRINTS
@@ -61,6 +62,7 @@ app.register_blueprint(mentorship_bp, url_prefix="/api")
 app.register_blueprint(admin_bp, url_prefix="/api")
 app.register_blueprint(messages_bp, url_prefix="/api")
 app.register_blueprint(broadcasts_bp, url_prefix="/api")
+app.register_blueprint(ai_bp, url_prefix="/api")
 
 # =========================================
 # API ROUTES
@@ -86,6 +88,10 @@ def health_check():
 @app.route("/")
 def home():
     return "Server Running"
+
+@app.route("/health")
+def health():
+    return {"status": "ok"}
 
 # =========================================
 # SERVE REACT FRONTEND

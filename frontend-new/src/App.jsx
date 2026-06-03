@@ -44,6 +44,8 @@ import BroadcastFeed from './pages/BroadcastFeed';
 
 import Mentors from './pages/Mentors';
 
+import CareerAssistant from './pages/CareerAssistant';
+
 // =========================================
 // COMPONENTS
 // =========================================
@@ -236,6 +238,15 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Mentors />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/career-assistant"
+              element={
+                <ProtectedRoute>
+                  <CareerAssistant />
                 </ProtectedRoute>
               }
             />
