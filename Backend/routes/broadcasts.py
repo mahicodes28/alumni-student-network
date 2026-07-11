@@ -1,4 +1,5 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
+from utils.auth_middleware import token_required
 
 from db import (
     broadcasts_col,
@@ -15,6 +16,11 @@ broadcasts_bp = Blueprint(
     __name__
 )
 
+@broadcasts_bp.before_request
+@token_required
+def before_broadcasts_request():
+    pass
+
 # =========================================
 # CREATE BROADCAST
 # =========================================
@@ -25,6 +31,9 @@ broadcasts_bp = Blueprint(
 def create_broadcast():
 
     data = request.get_json()
+
+    if g.current_user["user_id"] != data.get("user_id"):
+        return jsonify({"error": "Unauthorized"}), 403
 
     required = [
         "user_id",
@@ -218,6 +227,9 @@ def get_broadcasts():
 )
 def get_user_broadcasts(user_id):
 
+    if g.current_user["user_id"] != user_id:
+        return jsonify({"error": "Unauthorized"}), 403
+
     u_id = ObjectId(user_id)
 
     broadcasts = list(
@@ -279,6 +291,13 @@ def get_user_broadcasts(user_id):
 def delete_broadcast(broadcast_id):
 
     b_id = ObjectId(broadcast_id)
+
+    # Only allow author or admin to delete broadcast
+    post = broadcasts_col.find_one({"_id": b_id})
+    if not post:
+        return jsonify({"error": "Broadcast not found"}), 404
+    if g.current_user["role"] != "admin" and g.current_user["user_id"] != str(post.get("userId")):
+        return jsonify({"error": "Unauthorized"}), 403
 
     result = broadcasts_col.delete_one({
         "_id": b_id

@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from bson import ObjectId
+from utils.auth_middleware import admin_required
 
 from db import (
     users_col,
@@ -10,6 +11,11 @@ from db import (
 )
 
 admin_bp = Blueprint("admin", __name__)
+
+@admin_bp.before_request
+@admin_required
+def before_admin_request():
+    pass
 
 # =========================================
 # GET ALL USERS

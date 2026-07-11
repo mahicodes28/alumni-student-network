@@ -120,6 +120,26 @@ const AdminRoute = ({
 };
 
 // =========================================
+// PUBLIC ROUTE (Redirects to dashboard if logged in)
+// =========================================
+
+const PublicRoute = ({ children }) => {
+
+  const { user } = useAuth();
+
+  if (user) {
+
+    return (
+      <Navigate to="/dashboard" />
+    );
+
+  }
+
+  return children;
+
+};
+
+// =========================================
 // MAIN APP
 // =========================================
 
@@ -150,12 +170,20 @@ function App() {
 
             <Route
               path="/login"
-              element={<Login />}
+              element={
+                <PublicRoute>
+                  <Login />
+                </PublicRoute>
+              }
             />
 
             <Route
               path="/register"
-              element={<Register />}
+              element={
+                <PublicRoute>
+                  <Register />
+                </PublicRoute>
+              }
             />
 
             {/* DASHBOARD */}

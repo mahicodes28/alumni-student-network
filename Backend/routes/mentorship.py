@@ -1,10 +1,16 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from db import requests_col, users_col, profiles_col
+from utils.auth_middleware import token_required
 
 from datetime import datetime
 from bson import ObjectId
 
 mentorship_bp = Blueprint("mentorship", __name__)
+
+@mentorship_bp.before_request
+@token_required
+def before_mentorship_request():
+    pass
 
 # =========================================
 # SEND MENTORSHIP REQUEST
@@ -18,6 +24,9 @@ def send_request():
         return jsonify({
             "error": "student_id and alumni_id required"
         }), 400
+
+    if g.current_user["user_id"] != data["student_id"]:
+        return jsonify({"error": "Unauthorized"}), 403
 
     student_id = ObjectId(data["student_id"])
     alumni_id = ObjectId(data["alumni_id"])
@@ -56,6 +65,9 @@ def send_request():
 # =========================================
 @mentorship_bp.route("/requests/<user_id>", methods=["GET"])
 def get_requests(user_id):
+
+    if g.current_user["user_id"] != user_id:
+        return jsonify({"error": "Unauthorized"}), 403
 
     u_id = ObjectId(user_id)
 
@@ -134,6 +146,9 @@ def get_requests(user_id):
 @mentorship_bp.route("/pending/<alumni_id>", methods=["GET"])
 def get_pending_requests(alumni_id):
 
+    if g.current_user["user_id"] != alumni_id:
+        return jsonify({"error": "Unauthorized"}), 403
+
     a_id = ObjectId(alumni_id)
 
     requests = list(
@@ -190,6 +205,9 @@ def get_pending_requests(alumni_id):
 # =========================================
 @mentorship_bp.route("/mentees/<alumni_id>", methods=["GET"])
 def get_mentees(alumni_id):
+
+    if g.current_user["user_id"] != alumni_id:
+        return jsonify({"error": "Unauthorized"}), 403
 
     a_id = ObjectId(alumni_id)
 
@@ -250,6 +268,9 @@ def get_mentees(alumni_id):
 @mentorship_bp.route("/my-mentors/<student_id>", methods=["GET"])
 def get_my_mentors(student_id):
 
+    if g.current_user["user_id"] != student_id:
+        return jsonify({"error": "Unauthorized"}), 403
+
     s_id = ObjectId(student_id)
 
     requests = list(
@@ -301,6 +322,9 @@ def get_my_mentors(student_id):
 # =========================================
 @mentorship_bp.route("/advanced-stats/<user_id>", methods=["GET"])
 def advanced_stats(user_id):
+
+    if g.current_user["user_id"] != user_id:
+        return jsonify({"error": "Unauthorized"}), 403
 
     u_id = ObjectId(user_id)
 
@@ -394,6 +418,13 @@ def update_request(request_id):
     data = request.get_json()
 
     r_id = ObjectId(request_id)
+
+    # Only the alumni who received the request can update it
+    req = requests_col.find_one({"_id": r_id})
+    if not req:
+        return jsonify({"error": "Request not found"}), 404
+    if g.current_user["user_id"] != str(req.get("alumniId")):
+        return jsonify({"error": "Unauthorized"}), 403
 
     allowed_status = [
         "pending",

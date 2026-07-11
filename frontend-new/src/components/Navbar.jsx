@@ -26,8 +26,8 @@ const Navbar = () => {
 
   const location = useLocation();
 
-  const isLandingPage =
-    location.pathname === '/';
+  const isAuthPage =
+    location.pathname === '/login' || location.pathname === '/register';
 
   return (
 
@@ -52,7 +52,7 @@ const Navbar = () => {
 
       <div className="nav-links">
 
-        {user && !isLandingPage ? (
+        {isAuthPage ? null : user ? (
 
           <>
 

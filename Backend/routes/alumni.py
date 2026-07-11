@@ -1,10 +1,11 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from db import (
     users_col,
     profiles_col,
     broadcasts_col,
     requests_col
 )
+from utils.auth_middleware import token_required
 
 from bson import ObjectId
 from datetime import datetime
@@ -12,6 +13,11 @@ import math
 import re
 
 alumni_bp = Blueprint("alumni", __name__)
+
+@alumni_bp.before_request
+@token_required
+def before_alumni_request():
+    pass
 
 # =========================================
 # SEARCH ALUMNI
@@ -151,6 +157,9 @@ def clean_text(text):
 
 @alumni_bp.route("/recommendations/<student_id>", methods=["GET"])
 def get_recommendations(student_id):
+
+    if g.current_user["user_id"] != student_id:
+        return jsonify({"error": "Unauthorized"}), 403
 
     s_id = ObjectId(student_id)
 
@@ -304,7 +313,13 @@ def get_recommendations(student_id):
 @alumni_bp.route("/broadcast", methods=["POST"])
 def create_broadcast():
 
+    if g.current_user["role"] not in ["alumni", "admin"]:
+        return jsonify({"error": "Access forbidden: only alumni can broadcast"}), 403
+
     data = request.json
+
+    if g.current_user["user_id"] != data.get("alumniId"):
+        return jsonify({"error": "Unauthorized"}), 403
 
     new_post = {
 
@@ -371,6 +386,13 @@ def get_broadcasts():
 @alumni_bp.route("/broadcast/<post_id>", methods=["DELETE"])
 def delete_broadcast(post_id):
 
+    # Only allow author or admin to delete broadcast
+    post = broadcasts_col.find_one({"_id": ObjectId(post_id)})
+    if not post:
+        return jsonify({"error": "Broadcast not found"}), 404
+    if g.current_user["role"] != "admin" and g.current_user["user_id"] != str(post.get("alumniId")):
+        return jsonify({"error": "Unauthorized"}), 403
+
     broadcasts_col.delete_one({
         "_id": ObjectId(post_id)
     })
@@ -385,6 +407,9 @@ def delete_broadcast(post_id):
 # =========================================
 @alumni_bp.route("/analytics/<alumni_id>", methods=["GET"])
 def alumni_analytics(alumni_id):
+
+    if g.current_user["user_id"] != alumni_id and g.current_user["role"] != "admin":
+        return jsonify({"error": "Unauthorized"}), 403
 
     total_posts = broadcasts_col.count_documents({
         "alumniId": alumni_id

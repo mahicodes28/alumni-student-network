@@ -1,4 +1,5 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
+from utils.auth_middleware import token_required
 
 from db import (
     messages_col,
@@ -16,6 +17,11 @@ messages_bp = Blueprint(
     __name__
 )
 
+@messages_bp.before_request
+@token_required
+def before_messages_request():
+    pass
+
 # =========================================
 # SEND MESSAGE
 # =========================================
@@ -27,8 +33,12 @@ def send_message():
 
     data = request.get_json()
 
+    sender_id_str = data.get("sender_id")
+    if g.current_user["user_id"] != sender_id_str:
+        return jsonify({"error": "Unauthorized"}), 403
+
     sender_id = ObjectId(
-        data.get("sender_id")
+        sender_id_str
     )
 
     receiver_id = ObjectId(
@@ -89,6 +99,9 @@ def get_conversation(other_id):
         return jsonify({
             "error": "user_id required"
         }), 400
+
+    if g.current_user["user_id"] != user_id:
+        return jsonify({"error": "Unauthorized"}), 403
 
     u_id = ObjectId(user_id)
 
@@ -195,6 +208,9 @@ def get_conversation(other_id):
     methods=["GET"]
 )
 def get_contacts(user_id):
+
+    if g.current_user["user_id"] != user_id:
+        return jsonify({"error": "Unauthorized"}), 403
 
     u_id = ObjectId(user_id)
 
@@ -379,6 +395,9 @@ def get_contacts(user_id):
     methods=["GET"]
 )
 def unread_messages(user_id):
+
+    if g.current_user["user_id"] != user_id:
+        return jsonify({"error": "Unauthorized"}), 403
 
     u_id = ObjectId(user_id)
 

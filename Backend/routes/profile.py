@@ -1,5 +1,6 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from db import profiles_col, users_col
+from utils.auth_middleware import token_required
 
 from bson import ObjectId
 from datetime import datetime
@@ -10,17 +11,12 @@ profile_bp = Blueprint("profile", __name__)
 # CREATE / UPDATE PROFILE
 # =========================================
 @profile_bp.route("/profile", methods=["POST"])
+@token_required
 def create_profile():
 
     data = request.get_json()
 
-    if "user_id" not in data:
-
-        return jsonify({
-            "error": "user_id is required"
-        }), 400
-
-    user_id = ObjectId(data["user_id"])
+    user_id = ObjectId(g.current_user["user_id"])
 
     update_data = {
 
@@ -76,7 +72,11 @@ def create_profile():
 # UPDATE PROFILE
 # =========================================
 @profile_bp.route("/profile/<user_id>", methods=["PUT"])
+@token_required
 def update_profile(user_id):
+
+    if g.current_user["user_id"] != user_id and g.current_user["role"] != "admin":
+        return jsonify({"error": "Unauthorized to update this profile"}), 403
 
     data = request.get_json()
 
@@ -143,6 +143,7 @@ def update_profile(user_id):
 # GET PROFILE
 # =========================================
 @profile_bp.route("/profile/<user_id>", methods=["GET"])
+@token_required
 def get_profile(user_id):
 
     u_id = ObjectId(user_id)
@@ -273,6 +274,7 @@ def get_profile(user_id):
 # GET PROFILE STATS
 # =========================================
 @profile_bp.route("/profile-stats/<user_id>", methods=["GET"])
+@token_required
 def get_profile_stats(user_id):
 
     u_id = ObjectId(user_id)

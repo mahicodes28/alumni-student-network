@@ -1,12 +1,18 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from db import db, profiles_col, users_col
 from bson import ObjectId
 from datetime import datetime
 import os
 import requests
 import json
+from utils.auth_middleware import token_required
 
 ai_bp = Blueprint("ai", __name__)
+
+@ai_bp.before_request
+@token_required
+def before_ai_request():
+    pass
 chatbot_history_col = db["chatbot_history"]
 
 # Groq API Configuration
@@ -115,6 +121,9 @@ def chatbot_chat():
         data = request.get_json() or {}
         user_id_str = data.get("userId")
         user_message = data.get("message", "").strip()
+
+        if g.current_user["user_id"] != user_id_str:
+            return jsonify({"error": "Unauthorized"}), 403
 
         if not user_id_str or not user_message:
             return jsonify({"error": "userId and message are required"}), 400
@@ -228,6 +237,8 @@ Use this profile context to personalize your guidance, referencing their specifi
 @ai_bp.route("/career-assistant/history/<user_id>", methods=["GET"])
 def chatbot_history(user_id):
     try:
+        if g.current_user["user_id"] != user_id:
+            return jsonify({"error": "Unauthorized"}), 403
         u_id = ObjectId(user_id)
         chat = chatbot_history_col.find_one({"userId": u_id})
         
@@ -254,6 +265,8 @@ def chatbot_history(user_id):
 @ai_bp.route("/career-assistant/history/<user_id>", methods=["DELETE"])
 def clear_chatbot_history(user_id):
     try:
+        if g.current_user["user_id"] != user_id:
+            return jsonify({"error": "Unauthorized"}), 403
         u_id = ObjectId(user_id)
         chatbot_history_col.delete_one({"userId": u_id})
         return jsonify({
