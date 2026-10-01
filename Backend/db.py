@@ -49,8 +49,22 @@ messages_col = db["messages"]
 broadcasts_col = db["broadcasts"]
 
 # =========================================
-# OPTIONAL FUTURE COLLECTIONS
+# CAREERPATH AI COLLECTIONS
 # =========================================
+
+career_paths_col = db["career_paths"]
+
+roadmaps_col = db["roadmaps"]
+
+learning_col = db["learning_resources"]
+
+opportunities_col = db["opportunities"]
+
+government_col = db["government_jobs"]
+
+resume_analyses_col = db["resume_analyses"]
+
+interview_sessions_col = db["interview_sessions"]
 
 notifications_col = db["notifications"]
 

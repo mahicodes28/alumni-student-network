@@ -1,14 +1,7 @@
 import React from 'react';
-
-import {
-  Link,
-  useLocation
-} from 'react-router-dom';
-
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-
 import {
-
   LogOut,
   MessageCircle,
   LayoutDashboard,
@@ -16,382 +9,140 @@ import {
   Shield,
   BriefcaseBusiness,
   UserCircle2,
-  Sparkles
-
+  Sparkles,
+  Compass,
+  GraduationCap,
+  Target,
+  BookOpen,
+  FileCheck,
+  Video,
+  Award,
+  Layers,
+  MapPin
 } from 'lucide-react';
 
 const Navbar = () => {
-
   const { user, logout } = useAuth();
-
   const location = useLocation();
 
-  const isAuthPage =
-    location.pathname === '/login' || location.pathname === '/register';
+  const isActive = (path) => location.pathname === path;
 
   return (
+    <nav className="cp-navbar">
+      <div className="cp-navbar-container">
+        {/* LOGO */}
+        <Link to="/" className="cp-logo">
+          <Sparkles size={24} color="#6366f1" />
+          CareerPath <span>AI</span>
+        </Link>
 
-    <nav className="navbar">
-
-      {/* LOGO */}
-
-      <Link
-        to="/"
-        className="logo"
-      >
-
-        <Sparkles size={22} />
-
-        <span>
-          AlumniConnect
-        </span>
-
-      </Link>
-
-      {/* NAVIGATION */}
-
-      <div className="nav-links">
-
-        {isAuthPage ? null : user ? (
-
-          <>
-
-            {/* DASHBOARD */}
-
-            <Link
-              to="/dashboard"
-              className="nav-link"
-            >
-
-              <LayoutDashboard size={18} />
-
-              Dashboard
-
-            </Link>
-
-            {/* MESSAGES */}
-
-            <Link
-              to="/messages"
-              className="nav-link"
-            >
-
-              <MessageCircle size={18} />
-
-              Messages
-
-            </Link>
-
-            {/* OPPORTUNITIES */}
-
-            <Link
-              to="/broadcasts"
-              className="nav-link"
-            >
-
-              <BriefcaseBusiness size={18} />
-
-              Opportunities
-
-            </Link>
-
-            {/* CAREER AI */}
-
-            <Link
-              to="/career-assistant"
-              className="nav-link"
-              style={{ color: '#a78bfa' }}
-            >
-
-              <Sparkles size={18} />
-
-              Career AI
-
-            </Link>
-
-            {/* STUDENT */}
-
-            {user.role === 'student' && (
-
-              <Link
-                to="/alumni"
-                className="nav-link"
-              >
-
-                <Search size={18} />
-
-                Find Alumni
-
+        {/* NAV LINKS */}
+        <div className="cp-nav-links">
+          {user ? (
+            <>
+              <Link to="/dashboard" className={`cp-nav-item ${isActive('/dashboard') ? 'active' : ''}`}>
+                <LayoutDashboard size={18} />
+                Dashboard
               </Link>
 
-            )}
+              {user.role === 'student' && (
+                <>
+                  <Link to="/career-ai" className={`cp-nav-item ${isActive('/career-ai') ? 'active' : ''}`}>
+                    <Sparkles size={18} color="#6366f1" />
+                    Career AI
+                  </Link>
 
-            {/* PROFILE */}
+                  <Link to="/skill-gap" className={`cp-nav-item ${isActive('/skill-gap') ? 'active' : ''}`}>
+                    <Target size={18} />
+                    Skill Gap
+                  </Link>
 
-            <Link
-              to="/profile"
-              className="nav-link"
-            >
+                  <Link to="/roadmap" className={`cp-nav-item ${isActive('/roadmap') ? 'active' : ''}`}>
+                    <Compass size={18} />
+                    Roadmap
+                  </Link>
 
-              <UserCircle2 size={18} />
+                  <Link to="/learning" className={`cp-nav-item ${isActive('/learning') ? 'active' : ''}`}>
+                    <BookOpen size={18} />
+                    Learning
+                  </Link>
 
-              Profile
+                  <Link to="/opportunities" className={`cp-nav-item ${isActive('/opportunities') || isActive('/broadcasts') ? 'active' : ''}`}>
+                    <BriefcaseBusiness size={18} />
+                    Jobs
+                  </Link>
 
-            </Link>
+                  <Link to="/mentors" className={`cp-nav-item ${isActive('/mentors') || isActive('/alumni') ? 'active' : ''}`}>
+                    <GraduationCap size={18} />
+                    Mentors
+                  </Link>
 
-            {/* ADMIN */}
+                  <Link to="/resume-ai" className={`cp-nav-item ${isActive('/resume-ai') ? 'active' : ''}`}>
+                    <FileCheck size={18} />
+                    Resume AI
+                  </Link>
 
-            {user.role === 'admin' && (
+                  <Link to="/mock-interview" className={`cp-nav-item ${isActive('/mock-interview') ? 'active' : ''}`}>
+                    <Video size={18} />
+                    Interview
+                  </Link>
 
-              <Link
-                to="/admin"
-                className="nav-link"
-              >
+                  <Link to="/government-jobs" className={`cp-nav-item ${isActive('/government-jobs') ? 'active' : ''}`}>
+                    <Award size={18} />
+                    Govt Jobs
+                  </Link>
+                </>
+              )}
 
-                <Shield size={18} />
+              {user.role === 'alumni' && (
+                <>
+                  <Link to="/mentors" className={`cp-nav-item ${isActive('/mentors') ? 'active' : ''}`}>
+                    <GraduationCap size={18} />
+                    Requests
+                  </Link>
+                  <Link to="/broadcasts" className={`cp-nav-item ${isActive('/broadcasts') ? 'active' : ''}`}>
+                    <BriefcaseBusiness size={18} />
+                    Post Jobs
+                  </Link>
+                </>
+              )}
 
-                Admin
-
+              <Link to="/messages" className={`cp-nav-item ${isActive('/messages') ? 'active' : ''}`}>
+                <MessageCircle size={18} />
+                Messages
               </Link>
 
-            )}
+              <Link to="/profile" className={`cp-nav-item ${isActive('/profile') ? 'active' : ''}`}>
+                <UserCircle2 size={18} />
+                Profile
+              </Link>
 
-            {/* LOGOUT */}
+              {user.role === 'admin' && (
+                <Link to="/admin" className={`cp-nav-item ${isActive('/admin') ? 'active' : ''}`}>
+                  <Shield size={18} />
+                  Admin
+                </Link>
+              )}
 
-            <button
-              onClick={logout}
-              className="logout-btn"
-            >
-
-              <LogOut size={18} />
-
-              Logout
-
-            </button>
-
-          </>
-
-        ) : (
-
-          <>
-
-            <Link
-              to="/login"
-              className="nav-link"
-            >
-              Login
-            </Link>
-
-            <Link
-              to="/register"
-              className="register-btn"
-            >
-              Get Started
-            </Link>
-
-          </>
-
-        )}
-
+              <button onClick={logout} className="btn btn-outline" style={{ padding: '0.45rem 0.9rem', fontSize: '0.88rem' }}>
+                <LogOut size={16} />
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="btn btn-outline">
+                Login
+              </Link>
+              <Link to="/register" className="btn btn-primary">
+                Get Started
+              </Link>
+            </>
+          )}
+        </div>
       </div>
-
-      {/* CSS */}
-
-      <style>{`
-
-        .navbar{
-
-          display:flex;
-
-          justify-content:
-          space-between;
-
-          align-items:center;
-
-          padding:1rem 2rem;
-
-          position:sticky;
-
-          top:0;
-
-          z-index:1000;
-
-          backdrop-filter:blur(20px);
-
-          background:
-          rgba(8,17,32,0.75);
-
-          border-bottom:
-          1px solid rgba(255,255,255,0.06);
-
-        }
-
-        /* LOGO */
-
-        .logo{
-
-          display:flex;
-
-          align-items:center;
-
-          gap:0.7rem;
-
-          text-decoration:none;
-
-          color:white;
-
-          font-size:1.4rem;
-
-          font-weight:700;
-
-        }
-
-        .logo span{
-
-          background:
-          linear-gradient(
-            135deg,
-            #60a5fa,
-            #a78bfa
-          );
-
-          -webkit-background-clip:text;
-
-          -webkit-text-fill-color:
-          transparent;
-
-        }
-
-        /* NAV LINKS */
-
-        .nav-links{
-
-          display:flex;
-
-          align-items:center;
-
-          gap:1rem;
-
-          flex-wrap:wrap;
-
-        }
-
-        .nav-link{
-
-          display:flex;
-
-          align-items:center;
-
-          gap:0.5rem;
-
-          text-decoration:none;
-
-          color:#cbd5e1;
-
-          padding:0.8rem 1rem;
-
-          border-radius:12px;
-
-          transition:0.25s;
-
-          font-weight:500;
-
-        }
-
-        .nav-link:hover{
-
-          background:
-          rgba(59,130,246,0.12);
-
-          color:white;
-
-        }
-
-        /* REGISTER */
-
-        .register-btn{
-
-          background:
-          linear-gradient(
-            135deg,
-            #2563eb,
-            #3b82f6
-          );
-
-          color:white;
-
-          text-decoration:none;
-
-          padding:0.8rem 1.3rem;
-
-          border-radius:12px;
-
-          font-weight:600;
-
-        }
-
-        /* LOGOUT */
-
-        .logout-btn{
-
-          border:none;
-
-          background:
-          rgba(239,68,68,0.12);
-
-          color:#ef4444;
-
-          padding:0.8rem 1rem;
-
-          border-radius:12px;
-
-          display:flex;
-
-          align-items:center;
-
-          gap:0.5rem;
-
-          cursor:pointer;
-
-          font-weight:600;
-
-        }
-
-        .logout-btn:hover{
-
-          background:
-          rgba(239,68,68,0.2);
-
-        }
-
-        /* MOBILE */
-
-        @media(max-width:900px){
-
-          .navbar{
-
-            flex-direction:column;
-
-            gap:1rem;
-
-            padding:1rem;
-
-          }
-
-          .nav-links{
-
-            justify-content:center;
-
-          }
-
-        }
-
-      `}</style>
-
     </nav>
-
   );
-
 };
 
 export default Navbar;

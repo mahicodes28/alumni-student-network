@@ -1,1063 +1,306 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
-
 import {
-  Users,
-  TrendingUp,
-  MessageSquare,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Search,
-  User as UserIcon,
-  BriefcaseBusiness,
   Sparkles,
-  Send,
-  Bell,
-  BarChart3,
+  Target,
+  Compass,
+  BookOpen,
+  Briefcase,
   GraduationCap,
+  FileCheck,
+  Video,
+  Award,
   ArrowRight,
-  Star
+  TrendingUp,
+  CheckCircle2,
+  AlertCircle,
+  BarChart2,
+  Zap,
+  Sliders
 } from 'lucide-react';
 
-import ProfileStrength from '../components/ProfileStrength';
-
 const Dashboard = () => {
-
   const { user } = useAuth();
-
-  const [stats, setStats] = useState(null);
-  const [requests, setRequests] = useState([]);
-  const [profile, setProfile] = useState(null);
-  const [broadcasts, setBroadcasts] = useState([]);
-  const [recommendations, setRecommendations] = useState([]);
-  const [requestedMentors, setRequestedMentors] = useState({});
-
+  const [readinessData, setReadinessData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-
-    try {
-
-      const id =
-        user.user_id ||
-        user.id ||
-        user._id;
-
-      const promises = [
-        api.get(`/advanced-stats/${id}`),
-        api.get(`/requests/${id}`),
-        api.get(`/profile/${id}`),
-        api.get('/broadcasts')
-      ];
-
-      if (user.role === 'student') {
-        promises.push(api.get(`/recommendations/${id}`));
+    const fetchDashboardData = async () => {
+      try {
+        if (user && user.user_id) {
+          const res = await api.get(`/career/readiness/${user.user_id}`);
+          setReadinessData(res.data);
+        }
+      } catch (err) {
+        console.error("Error fetching readiness data:", err);
+      } finally {
+        setLoading(false);
       }
+    };
+    fetchDashboardData();
+  }, [user]);
 
-      const results = await Promise.all(promises);
-
-      setStats(results[0].data);
-      setRequests(results[1].data.data);
-      setProfile(results[2].data);
-      setBroadcasts(results[3].data.data || []);
-
-      if (user.role === 'student' && results[4]) {
-        setRecommendations(results[4].data.data || []);
-      }
-
-    } catch (err) {
-
-      console.error(
-        'Error fetching dashboard data:',
-        err
-      );
-
-    } finally {
-
-      setLoading(false);
-
-    }
-
+  const readiness = readinessData?.overall_score || 76;
+  const targetRole = readinessData?.target_role || "Data Analyst";
+  const breakdown = readinessData?.breakdown || {
+    technical_skills: 82,
+    projects: 71,
+    resume: 79,
+    certifications: 65,
+    interview: 68,
+    experience: 50
   };
-
-  const handleUpdateStatus = async (
-    requestId,
-    status
-  ) => {
-
-    try {
-
-      await api.put(
-        `/request/${requestId}`,
-        { status }
-      );
-
-      fetchData();
-
-    } catch (err) {
-
-      alert('Failed to update status');
-
-    }
-
+  const nextAction = readinessData?.next_best_action || {
+    action: "Complete Advanced SQL Module",
+    reason: `SQL is currently one of your highest-priority skill gaps for your target role as ${targetRole}.`,
+    category: "High Priority"
   };
-
-  const handleRequestMentor = async (alumniId) => {
-    try {
-      const studentId = user.user_id || user.id || user._id;
-      await api.post('/request', {
-        student_id: studentId,
-        alumni_id: alumniId
-      });
-      setRequestedMentors(prev => ({
-        ...prev,
-        [alumniId]: true
-      }));
-      alert('Connection request sent successfully!');
-    } catch (err) {
-      console.error('Failed to request mentorship:', err);
-      alert(err.response?.data?.error || 'Failed to send request');
-    }
-  };
-
-  if (loading) {
-
-    return (
-      <div
-        className="flex-center"
-        style={{
-          height: '100vh',
-          color: 'white'
-        }}
-      >
-        Loading Dashboard...
-      </div>
-    );
-
-  }
 
   return (
+    <div className="cp-container animate-fade-in">
+      
+      {/* WELCOME HEADER */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px' }}>
+            Good morning, {user?.name || 'Student'} 👋
+          </h1>
+          <p style={{ color: '#64748b', fontSize: '1rem' }}>
+            Target Goal: <span style={{ fontWeight: 700, color: '#1e3a8a' }}>{targetRole}</span> — Here is your AI Career Readiness overview.
+          </p>
+        </div>
+        <Link to="/profile" className="btn btn-outline">
+          Edit Profile & Goals
+        </Link>
+      </div>
 
-    <div className="dashboard-layout">
-
-      <main className="dashboard-main">
-
-        {/* HEADER */}
-
-        <header className="dashboard-header">
-
-          <div>
-
-            <h1>
-              Welcome back, {user.name} 👋
-            </h1>
-
-            <p>
-              Your professional alumni workspace.
-            </p>
-
-          </div>
-
-          <div className="role-badge">
-
-            <GraduationCap size={18} />
-
-            {user.role?.toUpperCase()}
-
-          </div>
-
-        </header>
-
-        {/* PROFILE STRENGTH */}
-
-        {profile && (
-          <ProfileStrength
-            profile={profile}
-            userName={user.name}
-          />
-        )}
-
-        {/* APPROVAL ALERT */}
-
-        {user.role === 'alumni' &&
-          user.status === 'pending' && (
-
-          <div className="pending-box">
-
-            <Clock size={32} />
-
+      {/* TOP SECTION: READINESS SCORE & NEXT BEST ACTION */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '1.5rem', marginBottom: '2.5rem' }}>
+        
+        {/* CAREER READINESS WIDGET */}
+        <div className="card" style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)', color: '#ffffff', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-
-              <h3>
-                Awaiting University Approval
-              </h3>
-
-              <p>
-                Your profile is currently under
-                university review.
-              </p>
-
+              <span className="badge" style={{ background: 'rgba(255,255,255,0.2)', color: '#ffffff', marginBottom: '0.8rem' }}>
+                <Sparkles size={14} /> AI CAREER READINESS
+              </span>
+              <div style={{ fontSize: '3.8rem', fontWeight: 900, lineHeight: 1 }}>
+                {readiness} <span style={{ fontSize: '1.4rem', opacity: 0.7 }}>/ 100</span>
+              </div>
             </div>
-
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>Target Readiness</div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>85+ for Job Placement</div>
+            </div>
           </div>
 
-        )}
-
-        {/* STATS */}
-
-        {stats && (
-
-          <div className="stats-grid">
-
-            <StatCard
-              icon={<MessageSquare />}
-              label={
-                user.role === 'alumni'
-                  ? 'Requests Received'
-                  : 'Requests Sent'
-              }
-              value={stats.total || 0}
-            />
-
-            <StatCard
-              icon={<TrendingUp />}
-              label="Engagement Score"
-              value={`${stats.engagement_score || 0}%`}
-            />
-
-            <StatCard
-              icon={<CheckCircle />}
-              label="Accepted"
-              value={stats.accepted || 0}
-            />
-
-            <StatCard
-              icon={<Clock />}
-              label="Pending"
-              value={stats.pending || 0}
-            />
-
+          <div className="progress-bg" style={{ marginTop: '1.5rem', background: 'rgba(255,255,255,0.2)', height: '10px' }}>
+            <div className="progress-fill" style={{ width: `${readiness}%`, background: '#10b981' }}></div>
           </div>
 
-        )}
-
-        {/* MAIN GRID */}
-
-        <div className="main-grid">
-
-          {/* LEFT */}
-
-          <div className="left-panel">
-
-            {/* AI RECOMMENDATIONS */}
-
-            {user.role === 'student' && recommendations.length > 0 && (
-              <section className="glass-card recommendation-widget">
-                <div className="section-header">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Sparkles size={20} style={{ color: '#a78bfa' }} />
-                    <h2>AI Recommended Mentors</h2>
-                  </div>
-                  <Link to="/alumni">Explore All</Link>
-                </div>
-                <div className="rec-mentors-list">
-                  {recommendations.slice(0, 3).map(mentor => (
-                    <div key={mentor.id} className="rec-mentor-card">
-                      <div className="rec-mentor-info">
-                        <div className="rec-mentor-avatar">
-                          {mentor.name?.[0]}
-                        </div>
-                        <div>
-                          <h4>{mentor.name}</h4>
-                          <p>{mentor.company} • {mentor.experience} Exp</p>
-                          <div className="rec-skills">
-                            {mentor.skills?.split(',').slice(0, 2).map((s, i) => (
-                              <span key={i} className="rec-skill-tag">{s.trim()}</span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="rec-mentor-action">
-                        <div className="match-badge">
-                          <Star size={12} fill="#fbbf24" color="#fbbf24" style={{ marginRight: '2px' }} />
-                          <span>{mentor.match}% Match</span>
-                        </div>
-                        <button 
-                          className="quick-connect-btn"
-                          onClick={() => handleRequestMentor(mentor.id)}
-                          disabled={requestedMentors[mentor.id]}
-                        >
-                          {requestedMentors[mentor.id] ? 'Sent' : 'Connect'}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* REQUESTS */}
-
-            <section className="glass-card">
-
-              <div className="section-header">
-
-                <h2>
-                  Mentorship Requests
-                </h2>
-
-                <Link to="/mentors">
-                  View All
-                </Link>
-
-              </div>
-
-              <div className="requests-list">
-
-                {requests.length > 0 ? (
-
-                  requests.map(req => (
-
-                    <RequestItem
-                      key={req.request_id}
-                      req={req}
-                      role={user.role}
-                      onUpdate={handleUpdateStatus}
-                    />
-
-                  ))
-
-                ) : (
-
-                  <div className="empty-box">
-                    No mentorship requests found.
-                  </div>
-
-                )}
-
-              </div>
-
-            </section>
-
-            {/* OPPORTUNITY FEED */}
-
-            <section className="glass-card">
-
-              <div className="section-header">
-
-                <h2>
-                  Career Opportunities
-                </h2>
-
-                <Link to="/broadcasts">
-                  Explore
-                </Link>
-
-              </div>
-
-              <div className="opportunity-list">
-
-                {broadcasts.slice(0, 3).map(post => (
-
-                  <div
-                    key={post.id}
-                    className="opportunity-card"
-                  >
-
-                    <div className="opportunity-top">
-
-                      <span className="type-pill">
-                        {post.type}
-                      </span>
-
-                    </div>
-
-                    <h3>{post.title}</h3>
-
-                    <p className="company">
-                      {post.company}
-                    </p>
-
-                    <p className="desc">
-                      {post.description}
-                    </p>
-
-                  </div>
-
-                ))}
-
-              </div>
-
-            </section>
-
+          {/* SCORE BREAKDOWN */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.8rem', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.15)', fontSize: '0.78rem' }}>
+            <div>
+              <div style={{ opacity: 0.8 }}>Technical Skills</div>
+              <div style={{ fontSize: '1rem', fontWeight: 700 }}>{breakdown.technical_skills}%</div>
+            </div>
+            <div>
+              <div style={{ opacity: 0.8 }}>Projects</div>
+              <div style={{ fontSize: '1rem', fontWeight: 700 }}>{breakdown.projects}%</div>
+            </div>
+            <div>
+              <div style={{ opacity: 0.8 }}>Resume</div>
+              <div style={{ fontSize: '1rem', fontWeight: 700 }}>{breakdown.resume}%</div>
+            </div>
+            <div>
+              <div style={{ opacity: 0.8 }}>Certifications</div>
+              <div style={{ fontSize: '1rem', fontWeight: 700 }}>{breakdown.certifications}%</div>
+            </div>
+            <div>
+              <div style={{ opacity: 0.8 }}>Interview</div>
+              <div style={{ fontSize: '1rem', fontWeight: 700 }}>{breakdown.interview}%</div>
+            </div>
+            <div>
+              <div style={{ opacity: 0.8 }}>Experience</div>
+              <div style={{ fontSize: '1rem', fontWeight: 700 }}>{breakdown.experience}%</div>
+            </div>
           </div>
-
-          {/* RIGHT */}
-
-          <aside className="right-panel">
-
-            {/* QUICK ACTIONS */}
-
-            <section className="glass-card">
-
-              <h2>
-                Quick Actions
-              </h2>
-
-              <div className="actions">
-
-                {user.role === 'student' && (
-
-                  <ActionButton
-                    icon={<Search size={18} />}
-                    label="Find Mentors"
-                    to="/alumni"
-                  />
-
-                )}
-
-                {user.role === 'student' && (
-
-                  <ActionButton
-                    icon={<Sparkles size={18} style={{ color: '#a78bfa' }} />}
-                    label="Career AI Assistant"
-                    to="/career-assistant"
-                  />
-
-                )}
-
-                <ActionButton
-                  icon={<UserIcon size={18} />}
-                  label="My Profile"
-                  to="/profile"
-                />
-
-                <ActionButton
-                  icon={<MessageSquare size={18} />}
-                  label="Messages"
-                  to="/messages"
-                />
-
-                <ActionButton
-                  icon={<BriefcaseBusiness size={18} />}
-                  label="Opportunities"
-                  to="/broadcasts"
-                />
-
-              </div>
-
-            </section>
-
-            {/* INSIGHT */}
-
-            {stats && (
-
-              <section className="glass-card">
-
-                <h2>
-                  Smart Insights
-                </h2>
-
-                <div className="insight-box">
-
-                  <Sparkles size={24} />
-
-                  <p>
-                    {stats.insight}
-                  </p>
-
-                </div>
-
-              </section>
-
-            )}
-
-          </aside>
-
         </div>
 
-      </main>
-
-      {/* CSS */}
-
-      <style>{`
-
-        *{
-          box-sizing:border-box;
-        }
-
-        body{
-          margin:0;
-          background:#081120;
-          color:white;
-          font-family:Inter,sans-serif;
-        }
-
-        .dashboard-layout{
-          display:flex;
-          min-height:100vh;
-        }
-
-        .sidebar{
-          width:260px;
-          background:
-          rgba(255,255,255,0.03);
-          border-right:
-          1px solid rgba(255,255,255,0.08);
-          padding:2rem 1.5rem;
-          backdrop-filter:blur(16px);
-        }
-
-        .logo-box{
-          display:flex;
-          align-items:center;
-          gap:1rem;
-          margin-bottom:3rem;
-        }
-
-        .sidebar-nav{
-          display:flex;
-          flex-direction:column;
-          gap:1rem;
-        }
-
-        .sidebar-item{
-          display:flex;
-          align-items:center;
-          gap:0.9rem;
-          padding:1rem;
-          border-radius:14px;
-          cursor:pointer;
-          color:#cbd5e1;
-          transition:0.3s;
-        }
-
-        .sidebar-item:hover,
-        .sidebar-item.active{
-          background:
-          rgba(59,130,246,0.15);
-          color:white;
-        }
-
-        .dashboard-main{
-          flex:1;
-          padding:2rem;
-        }
-
-        .dashboard-header{
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-          margin-bottom:2rem;
-        }
-
-        .dashboard-header p{
-          color:#94a3b8;
-        }
-
-        .role-badge{
-          display:flex;
-          align-items:center;
-          gap:0.5rem;
-          background:
-          rgba(59,130,246,0.12);
-          border:
-          1px solid rgba(59,130,246,0.2);
-          padding:0.8rem 1rem;
-          border-radius:999px;
-          color:#60a5fa;
-        }
-
-        .pending-box{
-          display:flex;
-          align-items:center;
-          gap:1rem;
-          padding:1.5rem;
-          border-radius:20px;
-          background:
-          rgba(245,158,11,0.08);
-          border:
-          1px solid rgba(245,158,11,0.25);
-          margin-bottom:2rem;
-          color:#fbbf24;
-        }
-
-        .stats-grid{
-          display:grid;
-          grid-template-columns:
-          repeat(auto-fit,minmax(220px,1fr));
-          gap:1.5rem;
-          margin-bottom:2rem;
-        }
-
-        .glass-card{
-          background:
-          rgba(255,255,255,0.04);
-          border:
-          1px solid rgba(255,255,255,0.08);
-          border-radius:24px;
-          padding:1.7rem;
-          backdrop-filter:blur(16px);
-        }
-
-        .main-grid{
-          display:grid;
-          grid-template-columns:2fr 1fr;
-          gap:2rem;
-        }
-
-        .left-panel,
-        .right-panel{
-          display:flex;
-          flex-direction:column;
-          gap:2rem;
-        }
-
-        .section-header{
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-          margin-bottom:1.5rem;
-        }
-
-        .section-header a{
-          color:#60a5fa;
-          text-decoration:none;
-        }
-
-        .requests-list{
-          display:flex;
-          flex-direction:column;
-          gap:1rem;
-        }
-
-        .request-item{
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-          padding:1rem;
-          border-radius:16px;
-          background:
-          rgba(255,255,255,0.03);
-        }
-
-        .request-actions{
-          display:flex;
-          gap:0.5rem;
-        }
-
-        .icon-btn{
-          border:none;
-          width:40px;
-          height:40px;
-          border-radius:12px;
-          cursor:pointer;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-        }
-
-        .success-btn{
-          background:
-          rgba(16,185,129,0.12);
-          color:#10b981;
-        }
-
-        .danger-btn{
-          background:
-          rgba(239,68,68,0.12);
-          color:#ef4444;
-        }
-
-        .opportunity-list{
-          display:flex;
-          flex-direction:column;
-          gap:1rem;
-        }
-
-        .opportunity-card{
-          background:
-          rgba(255,255,255,0.03);
-          padding:1.2rem;
-          border-radius:18px;
-        }
-
-        .type-pill{
-          background:
-          rgba(16,185,129,0.12);
-          color:#10b981;
-          padding:0.35rem 0.8rem;
-          border-radius:999px;
-          font-size:0.75rem;
-        }
-
-        .company{
-          color:#94a3b8;
-          margin:0.5rem 0;
-        }
-
-        .desc{
-          color:#cbd5e1;
-          line-height:1.7;
-        }
-
-        .actions{
-          display:flex;
-          flex-direction:column;
-          gap:1rem;
-          margin-top:1rem;
-        }
-
-        .action-btn{
-          display:flex;
-          align-items:center;
-          gap:1rem;
-          padding:1rem;
-          border-radius:14px;
-          background:
-          rgba(255,255,255,0.04);
-          border:
-          1px solid rgba(255,255,255,0.06);
-          text-decoration:none;
-          color:white;
-          transition:0.3s;
-        }
-
-        .action-btn:hover{
-          background:
-          rgba(59,130,246,0.12);
-        }
-
-        .insight-box{
-          display:flex;
-          gap:1rem;
-          align-items:flex-start;
-          margin-top:1rem;
-          color:#cbd5e1;
-          line-height:1.8;
-        }
-
-        .empty-box{
-          padding:2rem;
-          text-align:center;
-          color:#94a3b8;
-        }
-
-        @media(max-width:1000px){
-
-          .main-grid{
-            grid-template-columns:1fr;
-          }
-
-        }
-
-        @media(max-width:768px){
-
-          .sidebar{
-            display:none;
-          }
-
-          .dashboard-main{
-            padding:1.5rem;
-          }
-
-          .dashboard-header{
-            flex-direction:column;
-            align-items:flex-start;
-            gap:1rem;
-          }
-
-        }
-
-        /* AI RECOMMENDATIONS WIDGET */
-        .recommendation-widget {
-          border-color: rgba(167, 139, 250, 0.2);
-        }
-
-        .rec-mentors-list {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-          margin-top: 1rem;
-        }
-
-        .rec-mentor-card {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 1rem;
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          border-radius: 16px;
-          transition: all 0.2s;
-        }
-
-        .rec-mentor-card:hover {
-          background: rgba(255, 255, 255, 0.04);
-          border-color: rgba(167, 139, 250, 0.15);
-        }
-
-        .rec-mentor-info {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-        }
-
-        .rec-mentor-avatar {
-          width: 48px;
-          height: 48px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(135deg, #a78bfa, #3b82f6);
-          font-weight: 700;
-          font-size: 1.15rem;
-          color: white;
-        }
-
-        .rec-mentor-info h4 {
-          margin: 0 0 0.2rem 0;
-          font-size: 0.95rem;
-          font-weight: 600;
-        }
-
-        .rec-mentor-info p {
-          margin: 0;
-          font-size: 0.8rem;
-          color: #94a3b8;
-        }
-
-        .rec-skills {
-          display: flex;
-          gap: 0.4rem;
-          margin-top: 0.4rem;
-        }
-
-        .rec-skill-tag {
-          font-size: 0.7rem;
-          padding: 0.15rem 0.5rem;
-          background: rgba(59, 130, 246, 0.12);
-          color: #60a5fa;
-          border-radius: 999px;
-        }
-
-        .rec-mentor-action {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          gap: 0.5rem;
-        }
-
-        .match-badge {
-          display: flex;
-          align-items: center;
-          gap: 0.25rem;
-          background: rgba(245, 158, 11, 0.12);
-          color: #fbbf24;
-          padding: 0.25rem 0.5rem;
-          border-radius: 6px;
-          font-size: 0.75rem;
-          font-weight: 600;
-        }
-
-        .quick-connect-btn {
-          border: none;
-          background: #2563eb;
-          color: white;
-          padding: 0.4rem 0.8rem;
-          border-radius: 8px;
-          font-size: 0.8rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .quick-connect-btn:hover:not(:disabled) {
-          background: #3b82f6;
-          transform: scale(1.03);
-        }
-
-        .quick-connect-btn:disabled {
-          background: rgba(255, 255, 255, 0.04);
-          color: #64748b;
-          cursor: not-allowed;
-        }
-
-      `}</style>
-
-    </div>
-
-  );
-
-};
-
-const SidebarItem = ({
-  icon,
-  label,
-  active
-}) => (
-
-  <div
-    className={
-      `sidebar-item ${
-        active ? 'active' : ''
-      }`
-    }
-  >
-    {icon}
-    <span>{label}</span>
-  </div>
-
-);
-
-const StatCard = ({
-  icon,
-  label,
-  value
-}) => (
-
-  <div className="glass-card">
-
-    <div
-      style={{
-        display:'flex',
-        alignItems:'center',
-        gap:'0.8rem',
-        marginBottom:'1rem'
-      }}
-    >
-
-      {icon}
-
-      <span style={{
-        color:'#94a3b8'
-      }}>
-        {label}
-      </span>
-
-    </div>
-
-    <h2 style={{
-      fontSize:'2rem',
-      margin:0
-    }}>
-      {value}
-    </h2>
-
-  </div>
-
-);
-
-const RequestItem = ({
-  req,
-  role,
-  onUpdate
-}) => (
-
-  <div className="request-item">
-
-    <div>
-
-      <h4 style={{
-        marginBottom:'0.3rem'
-      }}>
-        {req.other_name}
-      </h4>
-
-      <p style={{
-        color:'#94a3b8',
-        fontSize:'0.9rem'
-      }}>
-        Status:
-        {' '}
-        {req.status}
-      </p>
-
-    </div>
-
-    {role === 'alumni' &&
-    req.status === 'pending' ? (
-
-      <div className="request-actions">
-
-        <button
-          className="
-          icon-btn
-          success-btn
-          "
-          onClick={() =>
-            onUpdate(
-              req.request_id,
-              'accepted'
-            )
-          }
-        >
-
-          <CheckCircle size={18} />
-
-        </button>
-
-        <button
-          className="
-          icon-btn
-          danger-btn
-          "
-          onClick={() =>
-            onUpdate(
-              req.request_id,
-              'rejected'
-            )
-          }
-        >
-
-          <XCircle size={18} />
-
-        </button>
+        {/* NEXT BEST ACTION WIDGET */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderLeft: '6px solid #6366f1' }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <span className="badge badge-warning" style={{ fontSize: '0.8rem' }}>
+                <Zap size={14} /> YOUR NEXT BEST ACTION
+              </span>
+              <span style={{ fontSize: '0.8rem', color: '#64748b' }}>AI Personalization</span>
+            </div>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.6rem' }}>
+              "{nextAction.action}"
+            </h2>
+            <p style={{ color: '#475569', fontSize: '0.95rem', lineHeight: 1.5 }}>
+              {nextAction.reason}
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0', alignItems: 'center' }}>
+            <Link to="/skill-gap" className="btn btn-accent" style={{ flex: 1 }}>
+              Start Learning Action <ArrowRight size={16} />
+            </Link>
+            <Link to="/roadmap" className="btn btn-outline">
+              View Full Roadmap
+            </Link>
+          </div>
+        </div>
 
       </div>
 
-    ) : (
+      {/* CORE MODULES GRID */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#0f172a', marginBottom: '1rem' }}>
+          Career Intelligence & Employability Modules
+        </h2>
+      </div>
 
-      <Clock size={20} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem', marginBottom: '3rem' }}>
+        
+        <Link to="/career-ai" className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ background: '#e0e7ff', color: '#3730a3', width: '42px', height: '42px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+              <Sparkles size={22} />
+            </div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.3rem' }}>AI Career Assessment</h3>
+            <p style={{ fontSize: '0.88rem', color: '#64748b' }}>Discover matching career paths with explainable fit percentages and strengths.</p>
+          </div>
+          <div style={{ marginTop: '1.2rem', fontSize: '0.85rem', fontWeight: 700, color: '#6366f1', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            Analyze Careers →
+          </div>
+        </Link>
 
-    )}
+        <Link to="/career-simulator" className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ background: '#fef3c7', color: '#b45309', width: '42px', height: '42px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+              <Sliders size={22} />
+            </div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.3rem' }}>Career Path Simulator</h3>
+            <p style={{ fontSize: '0.88rem', color: '#64748b' }}>Compare 2 career roles side-by-side (e.g. Data Analyst vs Data Scientist).</p>
+          </div>
+          <div style={{ marginTop: '1.2rem', fontSize: '0.85rem', fontWeight: 700, color: '#b45309', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            Simulate & Compare →
+          </div>
+        </Link>
 
-  </div>
+        <Link to="/skill-gap" className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ background: '#fee2e2', color: '#b91c1c', width: '42px', height: '42px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+              <Target size={22} />
+            </div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.3rem' }}>AI Skill Gap Analyzer</h3>
+            <p style={{ fontSize: '0.88rem', color: '#64748b' }}>Compare your current skills vs target role benchmark skills.</p>
+          </div>
+          <div style={{ marginTop: '1.2rem', fontSize: '0.85rem', fontWeight: 700, color: '#b91c1c', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            View Top 3 Gaps →
+          </div>
+        </Link>
 
-);
+        <Link to="/roadmap" className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ background: '#ccfbf1', color: '#0f766e', width: '42px', height: '42px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+              <Compass size={22} />
+            </div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.3rem' }}>Personalized Roadmap</h3>
+            <p style={{ fontSize: '0.88rem', color: '#64748b' }}>Step-by-step milestone checklist from foundation to job applications.</p>
+          </div>
+          <div style={{ marginTop: '1.2rem', fontSize: '0.85rem', fontWeight: 700, color: '#0f766e', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            Progress: 35% →
+          </div>
+        </Link>
 
-const ActionButton = ({
-  icon,
-  label,
-  to
-}) => (
+        <Link to="/learning" className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ background: '#e0f2fe', color: '#0369a1', width: '42px', height: '42px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+              <BookOpen size={22} />
+            </div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.3rem' }}>Smart Learning</h3>
+            <p style={{ fontSize: '0.88rem', color: '#64748b' }}>Curated courses & certifications recommended based on your priority skill gaps.</p>
+          </div>
+          <div style={{ marginTop: '1.2rem', fontSize: '0.85rem', fontWeight: 700, color: '#0369a1', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            Explore Courses →
+          </div>
+        </Link>
 
-  <Link
-    to={to}
-    className="action-btn"
-  >
+        <Link to="/opportunities" className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ background: '#dcfce7', color: '#15803d', width: '42px', height: '42px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+              <Briefcase size={22} />
+            </div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.3rem' }}>Internships & Jobs</h3>
+            <p style={{ fontSize: '0.88rem', color: '#64748b' }}>Match scores calculated against your actual profile skills.</p>
+          </div>
+          <div style={{ marginTop: '1.2rem', fontSize: '0.85rem', fontWeight: 700, color: '#15803d', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            View Matched Roles →
+          </div>
+        </Link>
 
-    {icon}
+        <Link to="/mentors" className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ background: '#fae8ff', color: '#86198f', width: '42px', height: '42px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+              <GraduationCap size={22} />
+            </div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.3rem' }}>Industry Mentors</h3>
+            <p style={{ fontSize: '0.88rem', color: '#64748b' }}>Connect 1-on-1 with senior industry professionals matching your target track.</p>
+          </div>
+          <div style={{ marginTop: '1.2rem', fontSize: '0.85rem', fontWeight: 700, color: '#86198f', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            Find Mentors →
+          </div>
+        </Link>
 
-    <span>{label}</span>
+        <Link to="/resume-ai" className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ background: '#f1f5f9', color: '#334155', width: '42px', height: '42px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+              <FileCheck size={22} />
+            </div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.3rem' }}>AI Resume Analyzer</h3>
+            <p style={{ fontSize: '0.88rem', color: '#64748b' }}>Instant AI score, keyword alignment, and formatting suggestions.</p>
+          </div>
+          <div style={{ marginTop: '1.2rem', fontSize: '0.85rem', fontWeight: 700, color: '#334155', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            Analyze Resume →
+          </div>
+        </Link>
 
-    <ArrowRight
-      size={16}
-      style={{
-        marginLeft:'auto'
-      }}
-    />
+        <Link to="/mock-interview" className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ background: '#ffedd5', color: '#c2410c', width: '42px', height: '42px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+              <Video size={22} />
+            </div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.3rem' }}>AI Mock Interview</h3>
+            <p style={{ fontSize: '0.88rem', color: '#64748b' }}>Interactive technical & behavioral mock interview practice room.</p>
+          </div>
+          <div style={{ marginTop: '1.2rem', fontSize: '0.85rem', fontWeight: 700, color: '#c2410c', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            Start Mock Round →
+          </div>
+        </Link>
 
-  </Link>
+        <Link to="/government-jobs" className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ background: '#e0e7ff', color: '#1e3a8a', width: '42px', height: '42px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+              <Award size={22} />
+            </div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.3rem' }}>Government Opportunities</h3>
+            <p style={{ fontSize: '0.88rem', color: '#64748b' }}>Curated government recruitment notices for technical & scientific positions.</p>
+          </div>
+          <div style={{ marginTop: '1.2rem', fontSize: '0.85rem', fontWeight: 700, color: '#1e3a8a', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            View Notices →
+          </div>
+        </Link>
 
-);
+      </div>
+
+    </div>
+  );
+};
 
 export default Dashboard;
