@@ -7,7 +7,8 @@ from db import (
     profiles_col,
     requests_col,
     broadcasts_col,
-    messages_col
+    messages_col,
+    db
 )
 
 admin_bp = Blueprint("admin", __name__)
@@ -267,24 +268,75 @@ def get_stats():
         "status": "pending"
     })
 
+    rejected_alumni = users_col.count_documents({
+        "role": "alumni",
+        "status": "rejected"
+    })
+
     total_profiles = profiles_col.count_documents({})
     total_requests = requests_col.count_documents({})
+    accepted_requests = requests_col.count_documents({"status": "accepted"})
+    pending_requests = requests_col.count_documents({"status": "pending"})
+    rejected_requests = requests_col.count_documents({"status": "rejected"})
+
+    acceptance_rate = round((accepted_requests / total_requests * 100), 1) if total_requests > 0 else 0
+
     total_messages = messages_col.count_documents({})
     total_broadcasts = broadcasts_col.count_documents({})
+    ai_conversations = db["chatbot_history"].count_documents({}) if "chatbot_history" in db.list_collection_names() else 0
+
+    # Domain comparison from real user profiles
+    domains = [
+        {"key": "data", "label": "Data & Analytics"},
+        {"key": "software", "label": "Software Engineering"},
+        {"key": "machine", "label": "AI & Machine Learning"},
+        {"key": "cloud", "label": "Cloud & DevOps"},
+        {"key": "product", "label": "Product & Design"}
+    ]
+    domain_comparison = []
+
+    student_ids = [u["_id"] for u in users_col.find({"role": "student"}, {"_id": 1})]
+    alumni_ids = [u["_id"] for u in users_col.find({"role": "alumni"}, {"_id": 1})]
+
+    for dom in domains:
+        k = dom["key"]
+        s_count = profiles_col.count_documents({
+            "userId": {"$in": student_ids},
+            "$or": [
+                {"domain": {"$regex": k, "$options": "i"}},
+                {"skills": {"$regex": k, "$options": "i"}},
+                {"target_role": {"$regex": k, "$options": "i"}},
+                {"career_goal": {"$regex": k, "$options": "i"}}
+            ]
+        })
+        m_count = profiles_col.count_documents({
+            "userId": {"$in": alumni_ids},
+            "$or": [
+                {"domain": {"$regex": k, "$options": "i"}},
+                {"skills": {"$regex": k, "$options": "i"}}
+            ]
+        })
+        domain_comparison.append({
+            "domain": dom["label"],
+            "student_interest": s_count,
+            "mentor_supply": m_count
+        })
 
     return jsonify({
-
         "total_users": total_users,
         "students": total_students,
         "alumni": total_alumni,
-
         "approved_alumni": approved_alumni,
         "pending_alumni": pending_alumni,
-
+        "rejected_alumni": rejected_alumni,
         "profiles": total_profiles,
         "mentorship_requests": total_requests,
-
+        "accepted_requests": accepted_requests,
+        "pending_requests": pending_requests,
+        "rejected_requests": rejected_requests,
+        "acceptance_rate": acceptance_rate,
         "messages": total_messages,
-        "broadcasts": total_broadcasts
-
+        "broadcasts": total_broadcasts,
+        "ai_conversations": ai_conversations,
+        "domain_comparison": domain_comparison
     }), 200

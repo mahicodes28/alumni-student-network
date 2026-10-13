@@ -3,8 +3,8 @@ from functools import wraps
 from flask import request, jsonify, g
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 
-# Get secret key from environment or use a secure fallback
-SECRET_KEY = os.getenv("JWT_SECRET") or os.getenv("SECRET_KEY") or "alumni-student-connect-secret-key-xyz"
+# Get secret key from environment — set JWT_SECRET or SECRET_KEY in your .env
+SECRET_KEY = os.getenv("JWT_SECRET") or os.getenv("SECRET_KEY") or os.urandom(32).hex()
 serializer = URLSafeTimedSerializer(SECRET_KEY)
 
 def token_required(f):

@@ -1,145 +1,305 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  LogOut,
-  MessageCircle,
-  LayoutDashboard,
-  Search,
-  Shield,
-  BriefcaseBusiness,
-  UserCircle2,
-  Sparkles,
-  Compass,
   GraduationCap,
-  Target,
-  BookOpen,
+  Sparkles,
+  LayoutDashboard,
+  Users,
+  Briefcase,
+  MessageSquare,
+  User,
+  LogOut,
+  Shield,
+  Menu,
+  X,
+  Compass,
   FileCheck,
-  Video,
-  Award,
-  Layers,
-  MapPin
+  Video
 } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const isActive = (path) => location.pathname === path;
+  const closeMenu = () => setMobileOpen(false);
 
   return (
-    <nav className="cp-navbar">
-      <div className="cp-navbar-container">
-        {/* LOGO */}
-        <Link to="/" className="cp-logo">
-          <Sparkles size={24} color="#6366f1" />
-          CareerPath <span>AI</span>
+    <nav className="ac-navbar">
+      <div className="ac-navbar-inner">
+        {/* BRAND LOGO */}
+        <Link to="/" className="ac-brand" onClick={closeMenu}>
+          <div style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            background: 'linear-gradient(135deg, #1d4ed8 0%, #0f172a 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#ffffff',
+            boxShadow: '0 2px 8px rgba(29, 78, 216, 0.25)'
+          }}>
+            <GraduationCap size={20} />
+          </div>
+          <span style={{ fontWeight: 800, fontSize: '1.25rem', color: '#0f172a' }}>
+            Alumni<span style={{ color: '#1d4ed8' }}>Connect</span>
+          </span>
+          <span className="ac-brand-badge">AI Powered</span>
         </Link>
 
-        {/* NAV LINKS */}
-        <div className="cp-nav-links">
+        {/* DESKTOP NAV LINKS */}
+        <ul className="ac-nav-links">
           {user ? (
             <>
-              <Link to="/dashboard" className={`cp-nav-item ${isActive('/dashboard') ? 'active' : ''}`}>
-                <LayoutDashboard size={18} />
-                Dashboard
-              </Link>
+              <li key="nav-dashboard">
+                <Link
+                  to="/dashboard"
+                  className={`ac-nav-link ${isActive('/dashboard') ? 'active' : ''}`}
+                >
+                  <LayoutDashboard size={17} />
+                  Dashboard
+                </Link>
+              </li>
 
               {user.role === 'student' && (
                 <>
-                  <Link to="/career-ai" className={`cp-nav-item ${isActive('/career-ai') ? 'active' : ''}`}>
-                    <Sparkles size={18} color="#6366f1" />
-                    Career AI
-                  </Link>
+                  <li key="nav-mentors">
+                    <Link
+                      to="/mentors"
+                      className={`ac-nav-link ${isActive('/mentors') || isActive('/alumni') ? 'active' : ''}`}
+                    >
+                      <Users size={17} />
+                      Mentors
+                    </Link>
+                  </li>
 
-                  <Link to="/skill-gap" className={`cp-nav-item ${isActive('/skill-gap') ? 'active' : ''}`}>
-                    <Target size={18} />
-                    Skill Gap
-                  </Link>
+                  <li key="nav-career-assistant">
+                    <Link
+                      to="/career-assistant"
+                      className={`ac-nav-link ac-nav-link-ai ${isActive('/career-assistant') ? 'active' : ''}`}
+                    >
+                      <Sparkles size={17} />
+                      AI Assistant
+                    </Link>
+                  </li>
 
-                  <Link to="/roadmap" className={`cp-nav-item ${isActive('/roadmap') ? 'active' : ''}`}>
-                    <Compass size={18} />
-                    Roadmap
-                  </Link>
-
-                  <Link to="/learning" className={`cp-nav-item ${isActive('/learning') ? 'active' : ''}`}>
-                    <BookOpen size={18} />
-                    Learning
-                  </Link>
-
-                  <Link to="/opportunities" className={`cp-nav-item ${isActive('/opportunities') || isActive('/broadcasts') ? 'active' : ''}`}>
-                    <BriefcaseBusiness size={18} />
-                    Jobs
-                  </Link>
-
-                  <Link to="/mentors" className={`cp-nav-item ${isActive('/mentors') || isActive('/alumni') ? 'active' : ''}`}>
-                    <GraduationCap size={18} />
-                    Mentors
-                  </Link>
-
-                  <Link to="/resume-ai" className={`cp-nav-item ${isActive('/resume-ai') ? 'active' : ''}`}>
-                    <FileCheck size={18} />
-                    Resume AI
-                  </Link>
-
-                  <Link to="/mock-interview" className={`cp-nav-item ${isActive('/mock-interview') ? 'active' : ''}`}>
-                    <Video size={18} />
-                    Interview
-                  </Link>
-
-                  <Link to="/government-jobs" className={`cp-nav-item ${isActive('/government-jobs') ? 'active' : ''}`}>
-                    <Award size={18} />
-                    Govt Jobs
-                  </Link>
+                  <li key="nav-jobs">
+                    <Link
+                      to="/opportunities"
+                      className={`ac-nav-link ${isActive('/opportunities') || isActive('/broadcasts') ? 'active' : ''}`}
+                    >
+                      <Briefcase size={17} />
+                      Opportunities
+                    </Link>
+                  </li>
                 </>
               )}
 
               {user.role === 'alumni' && (
                 <>
-                  <Link to="/mentors" className={`cp-nav-item ${isActive('/mentors') ? 'active' : ''}`}>
-                    <GraduationCap size={18} />
-                    Requests
-                  </Link>
-                  <Link to="/broadcasts" className={`cp-nav-item ${isActive('/broadcasts') ? 'active' : ''}`}>
-                    <BriefcaseBusiness size={18} />
-                    Post Jobs
-                  </Link>
+                  <li key="nav-alumni-mentors">
+                    <Link
+                      to="/mentors"
+                      className={`ac-nav-link ${isActive('/mentors') ? 'active' : ''}`}
+                    >
+                      <Users size={17} />
+                      Requests
+                    </Link>
+                  </li>
+                  <li key="nav-alumni-broadcasts">
+                    <Link
+                      to="/broadcasts"
+                      className={`ac-nav-link ${isActive('/broadcasts') ? 'active' : ''}`}
+                    >
+                      <Briefcase size={17} />
+                      Post Opportunities
+                    </Link>
+                  </li>
                 </>
               )}
 
-              <Link to="/messages" className={`cp-nav-item ${isActive('/messages') ? 'active' : ''}`}>
-                <MessageCircle size={18} />
-                Messages
-              </Link>
-
-              <Link to="/profile" className={`cp-nav-item ${isActive('/profile') ? 'active' : ''}`}>
-                <UserCircle2 size={18} />
-                Profile
-              </Link>
-
               {user.role === 'admin' && (
-                <Link to="/admin" className={`cp-nav-item ${isActive('/admin') ? 'active' : ''}`}>
-                  <Shield size={18} />
-                  Admin
-                </Link>
+                <li key="nav-admin">
+                  <Link
+                    to="/admin"
+                    className={`ac-nav-link ${isActive('/admin') ? 'active' : ''}`}
+                  >
+                    <Shield size={17} />
+                    Admin Console
+                  </Link>
+                </li>
               )}
 
-              <button onClick={logout} className="btn btn-outline" style={{ padding: '0.45rem 0.9rem', fontSize: '0.88rem' }}>
-                <LogOut size={16} />
-                Logout
-              </button>
+              <li key="nav-messages">
+                <Link
+                  to="/messages"
+                  className={`ac-nav-link ${isActive('/messages') ? 'active' : ''}`}
+                >
+                  <MessageSquare size={17} />
+                  Messages
+                </Link>
+              </li>
+
+              <li key="nav-profile">
+                <Link
+                  to="/profile"
+                  className={`ac-nav-link ${isActive('/profile') ? 'active' : ''}`}
+                >
+                  <User size={17} />
+                  Profile
+                </Link>
+              </li>
+
+              <li key="nav-user-chip" style={{ marginLeft: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span className="ac-badge ac-badge-neutral" style={{ textTransform: 'capitalize' }}>
+                  {user.role}
+                </span>
+                <button
+                  onClick={logout}
+                  className="ac-btn ac-btn-outline ac-btn-sm"
+                  title="Logout"
+                >
+                  <LogOut size={15} />
+                  Logout
+                </button>
+              </li>
             </>
           ) : (
             <>
-              <Link to="/login" className="btn btn-outline">
-                Login
-              </Link>
-              <Link to="/register" className="btn btn-primary">
-                Get Started
-              </Link>
+              <li key="nav-guest-how">
+                <a href="/#how-it-works" className="ac-nav-link">
+                  How It Works
+                </a>
+              </li>
+              <li key="nav-guest-mentors">
+                <a href="/#mentor-discovery" className="ac-nav-link">
+                  Find Mentors
+                </a>
+              </li>
+              <li key="nav-guest-ai">
+                <a href="/#ai-assistant" className="ac-nav-link ac-nav-link-ai">
+                  <Sparkles size={16} />
+                  AI Guidance
+                </a>
+              </li>
+              <li key="nav-guest-login" style={{ marginLeft: '0.75rem' }}>
+                <Link to="/login" className="ac-btn ac-btn-outline ac-btn-sm">
+                  Log In
+                </Link>
+              </li>
+              <li key="nav-guest-register">
+                <Link to="/register" className="ac-btn ac-btn-primary ac-btn-sm">
+                  Find Your Mentor
+                </Link>
+              </li>
             </>
           )}
-        </div>
+        </ul>
+
+        {/* MOBILE MENU TOGGLE BUTTON */}
+        <button
+          className="ac-nav-toggle"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="Toggle navigation menu"
+        >
+          {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      {/* MOBILE DRAWER */}
+      <div className={`ac-mobile-menu ${mobileOpen ? 'open' : ''}`}>
+        {user ? (
+          <>
+            <div style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--border)', marginBottom: '0.5rem' }}>
+              <div style={{ fontWeight: 700, color: 'var(--text-title)' }}>{user.name}</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
+                Role: {user.role}
+              </div>
+            </div>
+
+            <Link to="/dashboard" className="ac-nav-link" onClick={closeMenu}>
+              <LayoutDashboard size={18} /> Dashboard
+            </Link>
+
+            {user.role === 'student' && (
+              <>
+                <Link to="/mentors" className="ac-nav-link" onClick={closeMenu}>
+                  <Users size={18} /> Mentor Discovery
+                </Link>
+                <Link to="/career-assistant" className="ac-nav-link ac-nav-link-ai" onClick={closeMenu}>
+                  <Sparkles size={18} /> AI Career Assistant
+                </Link>
+                <Link to="/opportunities" className="ac-nav-link" onClick={closeMenu}>
+                  <Briefcase size={18} /> Opportunities & Jobs
+                </Link>
+                <Link to="/roadmap" className="ac-nav-link" onClick={closeMenu}>
+                  <Compass size={18} /> Career Roadmap
+                </Link>
+                <Link to="/resume-ai" className="ac-nav-link" onClick={closeMenu}>
+                  <FileCheck size={18} /> AI Resume Analyzer
+                </Link>
+                <Link to="/mock-interview" className="ac-nav-link" onClick={closeMenu}>
+                  <Video size={18} /> Mock Interview
+                </Link>
+              </>
+            )}
+
+            {user.role === 'alumni' && (
+              <>
+                <Link to="/mentors" className="ac-nav-link" onClick={closeMenu}>
+                  <Users size={18} /> Mentorship Requests
+                </Link>
+                <Link to="/broadcasts" className="ac-nav-link" onClick={closeMenu}>
+                  <Briefcase size={18} /> Broadcast Opportunities
+                </Link>
+              </>
+            )}
+
+            {user.role === 'admin' && (
+              <Link to="/admin" className="ac-nav-link" onClick={closeMenu}>
+                <Shield size={18} /> Admin Console
+              </Link>
+            )}
+
+            <Link to="/messages" className="ac-nav-link" onClick={closeMenu}>
+              <MessageSquare size={18} /> Messages
+            </Link>
+            <Link to="/profile" className="ac-nav-link" onClick={closeMenu}>
+              <User size={18} /> My Profile
+            </Link>
+
+            <button
+              onClick={() => { closeMenu(); logout(); }}
+              className="ac-btn ac-btn-outline"
+              style={{ marginTop: '0.5rem', width: '100%', justifyContent: 'center' }}
+            >
+              <LogOut size={16} /> Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <a href="/#how-it-works" className="ac-nav-link" onClick={closeMenu}>
+              How It Works
+            </a>
+            <a href="/#mentor-discovery" className="ac-nav-link" onClick={closeMenu}>
+              Find Mentors
+            </a>
+            <a href="/#ai-assistant" className="ac-nav-link ac-nav-link-ai" onClick={closeMenu}>
+              <Sparkles size={18} /> AI Guidance
+            </a>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <Link to="/login" className="ac-btn ac-btn-outline" onClick={closeMenu} style={{ width: '100%', justifyContent: 'center' }}>
+                Log In
+              </Link>
+              <Link to="/register" className="ac-btn ac-btn-primary" onClick={closeMenu} style={{ width: '100%', justifyContent: 'center' }}>
+                Find Your Mentor
+              </Link>
+            </div>
+          </>
+        )}
       </div>
     </nav>
   );

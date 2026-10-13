@@ -13,6 +13,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import BroadcastFeed from './pages/BroadcastFeed';
 import Mentors from './pages/Mentors';
 import CareerAI from './pages/CareerAI';
+import CareerAssistant from './pages/CareerAssistant';
 import CareerSimulator from './pages/CareerSimulator';
 import SkillGap from './pages/SkillGap';
 import Roadmap from './pages/Roadmap';
@@ -80,7 +81,7 @@ function App() {
 
             {/* CAREERPATH AI MODULES */}
             <Route path="/career-ai" element={<ProtectedRoute><CareerAI /></ProtectedRoute>} />
-            <Route path="/career-assistant" element={<Navigate to="/career-ai" />} />
+            <Route path="/career-assistant" element={<ProtectedRoute><CareerAssistant /></ProtectedRoute>} />
             <Route path="/career-simulator" element={<ProtectedRoute><CareerSimulator /></ProtectedRoute>} />
             <Route path="/skill-gap" element={<ProtectedRoute><SkillGap /></ProtectedRoute>} />
             <Route path="/roadmap" element={<ProtectedRoute><Roadmap /></ProtectedRoute>} />
@@ -88,7 +89,7 @@ function App() {
             <Route path="/opportunities" element={<ProtectedRoute><Opportunities /></ProtectedRoute>} />
             <Route path="/broadcasts" element={<ProtectedRoute><BroadcastFeed /></ProtectedRoute>} />
             <Route path="/mentors" element={<ProtectedRoute><Mentors /></ProtectedRoute>} />
-            <Route path="/alumni" element={<Navigate to="/mentors" />} />
+            <Route path="/alumni" element={<ProtectedRoute><Mentors /></ProtectedRoute>} />
             <Route path="/resume-ai" element={<ProtectedRoute><ResumeAI /></ProtectedRoute>} />
             <Route path="/mock-interview" element={<ProtectedRoute><MockInterview /></ProtectedRoute>} />
             <Route path="/government-jobs" element={<ProtectedRoute><GovernmentJobs /></ProtectedRoute>} />

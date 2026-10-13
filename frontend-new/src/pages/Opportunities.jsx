@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../utils/api';
-import { Briefcase, CheckCircle2, AlertCircle, MapPin, DollarSign, Clock, ArrowRight } from 'lucide-react';
+import { Briefcase, CheckCircle2, AlertCircle, MapPin, DollarSign, Clock, ArrowRight, ExternalLink } from 'lucide-react';
 
 const Opportunities = () => {
   const [opportunities, setOpportunities] = useState([]);
@@ -10,10 +10,11 @@ const Opportunities = () => {
   useEffect(() => {
     const fetchMatchedOpportunities = async () => {
       try {
+        setLoading(true);
         const res = await api.get('/opportunities/matched');
         setOpportunities(res.data.data || []);
       } catch (err) {
-        console.error("Error fetching opportunities:", err);
+        console.error('Error fetching opportunities:', err);
       } finally {
         setLoading(false);
       }
@@ -21,77 +22,119 @@ const Opportunities = () => {
     fetchMatchedOpportunities();
   }, []);
 
-  const filteredOpps = filterType === 'All' ? opportunities : opportunities.filter(o => o.type === filterType);
+  const filteredOpps = filterType === 'All' ? opportunities : opportunities.filter((o) => o.type === filterType);
 
   return (
-    <div className="cp-container animate-fade-in">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+    <div className="ac-container animate-fade-in" style={{ paddingBottom: '3rem' }}>
+      
+      {/* HEADER */}
+      <div className="ac-page-header">
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: '#15803d', fontWeight: 600, fontSize: '0.9rem' }}>
-            <Briefcase size={16} /> AI OPPORTUNITY MATCHING ENGINE
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.35rem' }}>
+            <span className="ac-badge ac-badge-green">
+              <Briefcase size={14} /> AI Opportunity Matching
+            </span>
           </div>
-          <h1 style={{ fontSize: '2.2rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px' }}>
-            Internships & Entry-Level Job Matching
+          <h1 className="ac-page-title">
+            Matched Internships & Entry-Level Roles
           </h1>
-          <p style={{ color: '#64748b' }}>
-            Every opportunity is matched against your actual student skills and target role requirements.
+          <p className="ac-page-subtitle">
+            Opportunities matched against your actual student skills, target role benchmarks, and verified alumni network.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        {/* Filter buttons */}
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           {['All', 'Internship', 'Full-Time'].map((t) => (
-            <button key={t} onClick={() => setFilterType(t)} className={`btn ${filterType === t ? 'btn-primary' : 'btn-outline'}`} style={{ padding: '0.45rem 0.9rem', fontSize: '0.85rem' }}>
+            <button
+              key={t}
+              onClick={() => setFilterType(t)}
+              className={`ac-btn ac-btn-sm ${filterType === t ? 'ac-btn-navy' : 'ac-btn-outline'}`}
+            >
               {t}
             </button>
           ))}
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        {filteredOpps.map((item) => (
-          <div key={item.id} className="card" style={{ padding: '1.5rem', display: 'grid', gridTemplateColumns: '1fr auto', gap: '1.5rem', alignItems: 'center' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginBottom: '0.5rem' }}>
-                <span className="badge badge-success" style={{ fontSize: '0.9rem', fontWeight: 800 }}>
-                  {item.match_score}% MATCH
-                </span>
-                <span className="badge badge-primary">{item.type}</span>
-                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Posted {item.posted_date}</span>
-              </div>
-
-              <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.3rem' }}>
-                {item.title}
-              </h3>
-              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1e3a8a', marginBottom: '0.8rem' }}>
-                {item.company} • <span style={{ color: '#64748b', fontWeight: 500 }}>{item.location}</span> • <span style={{ color: '#0d9488' }}>{item.stipend}</span>
-              </div>
-
-              <p style={{ fontSize: '0.9rem', color: '#475569', marginBottom: '1rem', lineHeight: 1.5 }}>
-                {item.description}
-              </p>
-
-              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.82rem' }}>
-                <div>
-                  <strong style={{ color: '#16a34a' }}>✓ MATCHING SKILLS:</strong>{' '}
-                  {item.matched_skills.join(', ')}
-                </div>
-                {item.missing_skills.length > 0 && (
-                  <div>
-                    <strong style={{ color: '#e11d48' }}>⚠ MISSING SKILLS:</strong>{' '}
-                    {item.missing_skills.join(', ')}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div style={{ textAlign: 'right' }}>
-              <button onClick={() => alert(`Redirecting to official application portal for ${item.title}`)} className="btn btn-primary" style={{ padding: '0.75rem 1.4rem' }}>
-                Apply Now <ArrowRight size={16} />
-              </button>
-            </div>
+      {/* OPPORTUNITIES LIST */}
+      {loading ? (
+        <div className="ac-card" style={{ textAlign: 'center', padding: '4rem' }}>
+          <div className="animate-pulse" style={{ color: 'var(--text-muted)' }}>Matching opportunities against your skill matrix...</div>
+        </div>
+      ) : filteredOpps.length === 0 ? (
+        <div className="ac-empty-state">
+          <div className="ac-empty-icon">
+            <Briefcase size={28} />
           </div>
-        ))}
-      </div>
+          <div className="ac-empty-title">No Opportunities Found</div>
+          <p className="ac-empty-desc">
+            No active positions match this filter right now. Check back soon for new postings from our network.
+          </p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {filteredOpps.map((item) => (
+            <div
+              key={item.id}
+              className="ac-card ac-card-hover"
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '1.25rem'
+              }}
+            >
+              <div style={{ flex: 1, minWidth: '280px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.4rem', flexWrap: 'wrap' }}>
+                  <span className="ac-badge ac-badge-green" style={{ fontWeight: 800 }}>
+                    {item.match_score}% Match
+                  </span>
+                  <span className="ac-badge ac-badge-blue">{item.type}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    Posted {item.posted_date}
+                  </span>
+                </div>
+
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.25rem' }}>
+                  {item.title}
+                </h3>
+                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.65rem' }}>
+                  {item.company} • <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>{item.location}</span> • <span style={{ color: 'var(--secondary)' }}>{item.stipend}</span>
+                </div>
+
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-body)', marginBottom: '0.85rem', lineHeight: 1.55 }}>
+                  {item.description}
+                </p>
+
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.8125rem' }}>
+                  <div>
+                    <strong style={{ color: 'var(--success)' }}>✓ Matched Skills:</strong>{' '}
+                    <span style={{ color: 'var(--navy-700)' }}>{item.matched_skills.join(', ')}</span>
+                  </div>
+                  {item.missing_skills.length > 0 && (
+                    <div>
+                      <strong style={{ color: 'var(--danger)' }}>⚠ Missing Skills:</strong>{' '}
+                      <span style={{ color: 'var(--navy-700)' }}>{item.missing_skills.join(', ')}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <button
+                  onClick={() => alert(`Application portal link for ${item.title} opened.`)}
+                  className="ac-btn ac-btn-primary"
+                >
+                  Apply Now <ArrowRight size={15} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
     </div>
   );
 };
