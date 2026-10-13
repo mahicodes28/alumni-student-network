@@ -46,6 +46,7 @@ from routes.admin import admin_bp
 from routes.messages import messages_bp
 from routes.broadcasts import broadcasts_bp
 from routes.ai import ai_bp
+from routes.career import career_bp
 
 # =========================================
 # REGISTER BLUEPRINTS
@@ -59,6 +60,7 @@ app.register_blueprint(admin_bp, url_prefix="/api")
 app.register_blueprint(messages_bp, url_prefix="/api")
 app.register_blueprint(broadcasts_bp, url_prefix="/api")
 app.register_blueprint(ai_bp, url_prefix="/api")
+app.register_blueprint(career_bp, url_prefix="/api")
 
 # =========================================
 # API HEALTH ROUTES
@@ -67,7 +69,7 @@ app.register_blueprint(ai_bp, url_prefix="/api")
 @app.route("/api")
 def api_home():
     return jsonify({
-        "message": "AlumniConnect Backend Running",
+        "message": "CareerPath AI Backend Running",
         "database": "Connected",
         "status": "success"
     })

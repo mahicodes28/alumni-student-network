@@ -1,531 +1,218 @@
-import React, {
-  useEffect,
-  useState
-} from 'react';
-
+import React, { useEffect, useState } from 'react';
 import api from '../utils/api';
-
 import { useAuth } from '../context/AuthContext';
-
 import {
-
   Search,
   Sparkles,
   Building2,
   Calendar,
   Plus,
-  ExternalLink
-
+  ExternalLink,
+  Briefcase,
+  Users
 } from 'lucide-react';
-
 import CreateBroadcast from '../components/CreateBroadcast';
 
 const BroadcastFeed = () => {
-
   const { user } = useAuth();
-
-  const [broadcasts, setBroadcasts] =
-    useState([]);
-
-  const [search, setSearch] =
-    useState('');
-
-  const [filter, setFilter] =
-    useState('');
-
-  const [showModal, setShowModal] =
-    useState(false);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  // =========================================
-  // FETCH BROADCASTS
-  // =========================================
+  const [broadcasts, setBroadcasts] = useState([]);
+  const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState('All');
+  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-
     fetchBroadcasts();
-
   }, []);
 
   const fetchBroadcasts = async () => {
-
     try {
-
-      const res = await api.get(
-        '/broadcasts'
-      );
-
-      setBroadcasts(
-        res.data.data || []
-      );
-
+      setLoading(true);
+      const res = await api.get('/broadcasts');
+      setBroadcasts(res.data.data || []);
     } catch (err) {
-
-      console.error(
-        'Broadcast fetch error:',
-        err
-      );
-
+      console.error('Error fetching broadcasts:', err);
     } finally {
-
       setLoading(false);
-
     }
-
   };
 
-  // =========================================
-  // FILTERS
-  // =========================================
+  const filteredBroadcasts = broadcasts.filter((b) => {
+    const matchesSearch =
+      b.title?.toLowerCase().includes(search.toLowerCase()) ||
+      b.company?.toLowerCase().includes(search.toLowerCase()) ||
+      b.description?.toLowerCase().includes(search.toLowerCase());
 
-  const filteredBroadcasts =
-    broadcasts.filter((b) => {
-
-      const matchesSearch =
-
-        b.title
-          ?.toLowerCase()
-          .includes(
-            search.toLowerCase()
-          )
-
-        ||
-
-        b.company
-          ?.toLowerCase()
-          .includes(
-            search.toLowerCase()
-          );
-
-      const matchesFilter =
-
-        !filter ||
-
-        b.type
-          ?.toLowerCase()
-          .includes(
-            filter.toLowerCase()
-          );
-
-      return (
-        matchesSearch &&
-        matchesFilter
-      );
-
-    });
-
-  // =========================================
-  // UI
-  // =========================================
+    const matchesFilter = filterType === 'All' || b.type === filterType;
+    return matchesSearch && matchesFilter;
+  });
 
   return (
-
-    <div className="broadcast-page">
-
-      {/* HERO */}
-
-      <div className="hero-section">
-
+    <div className="ac-container animate-fade-in" style={{ paddingBottom: '3rem' }}>
+      
+      {/* 1. HEADER */}
+      <div className="ac-page-header">
         <div>
-
-          <div className="hero-badge">
-
-            <Sparkles size={16} />
-
-            Alumni Career Network
-
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.35rem' }}>
+            <span className="ac-badge ac-badge-blue">
+              <Briefcase size={14} /> Alumni Opportunity Feed
+            </span>
           </div>
-
-          <h1>
-            Opportunities & Career Feed
+          <h1 className="ac-page-title">
+            Job & Internship Broadcasts
           </h1>
-
-          <p>
-            Discover internships,
-            referrals, jobs and career
-            updates shared by alumni.
+          <p className="ac-page-subtitle">
+            Opportunities, open roles, and direct referrals shared by verified university alumni.
           </p>
-
         </div>
-
-        {/* CREATE BUTTON */}
 
         {user?.role === 'alumni' && (
-
           <button
-            className="create-btn"
-            onClick={() =>
-              setShowModal(true)
-            }
+            onClick={() => setShowModal(true)}
+            className="ac-btn ac-btn-primary"
           >
-
-            <Plus size={18} />
-
-            Create Broadcast
-
+            <Plus size={16} /> Post Opportunity / Referral
           </button>
-
         )}
-
       </div>
 
-      {/* FILTERS */}
+      {/* 2. FILTERS & SEARCH BAR */}
+      <div style={{
+        background: '#ffffff',
+        border: '1px solid var(--border)',
+        borderRadius: '12px',
+        padding: '1.25rem',
+        marginBottom: '2rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '1rem',
+        boxShadow: 'var(--shadow-xs)'
+      }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          {['All', 'Internship', 'Full-Time', 'Referral', 'Event'].map((t) => (
+            <button
+              key={t}
+              onClick={() => setFilterType(t)}
+              className={`ac-btn ac-btn-sm ${filterType === t ? 'ac-btn-navy' : 'ac-btn-outline'}`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
 
-      <div className="filters">
-
-        <div className="search-box">
-
-          <Search size={18} />
-
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          background: '#f8fafc',
+          border: '1px solid var(--border)',
+          borderRadius: '8px',
+          padding: '0.4rem 0.75rem',
+          width: '280px'
+        }}>
+          <Search size={15} color="var(--text-muted)" />
           <input
             type="text"
-            placeholder="Search opportunities..."
+            placeholder="Search role, company..."
             value={search}
-            onChange={(e) =>
-              setSearch(
-                e.target.value
-              )
-            }
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ border: 'none', padding: 0, fontSize: '0.85rem', width: '100%', background: 'transparent' }}
           />
-
         </div>
-
-        <select
-          value={filter}
-          onChange={(e) =>
-            setFilter(
-              e.target.value
-            )
-          }
-        >
-
-          <option value="">
-            All Types
-          </option>
-
-          <option value="internship">
-            Internship
-          </option>
-
-          <option value="job">
-            Job
-          </option>
-
-          <option value="event">
-            Event
-          </option>
-
-          <option value="referral">
-            Referral
-          </option>
-
-        </select>
-
       </div>
 
-      {/* CONTENT */}
-
+      {/* 3. BROADCASTS LIST */}
       {loading ? (
-
-        <div className="loading-box">
-
-          Loading opportunities...
-
+        <div className="ac-card" style={{ textAlign: 'center', padding: '4rem' }}>
+          <div className="animate-pulse" style={{ color: 'var(--text-muted)' }}>Loading broadcasts...</div>
         </div>
-
+      ) : filteredBroadcasts.length === 0 ? (
+        <div className="ac-empty-state">
+          <div className="ac-empty-icon">
+            <Briefcase size={28} />
+          </div>
+          <div className="ac-empty-title">No Opportunities Posted Yet</div>
+          <p className="ac-empty-desc">
+            Check back soon for new alumni postings or referrals from the university network.
+          </p>
+          {user?.role === 'alumni' && (
+            <button onClick={() => setShowModal(true)} className="ac-btn ac-btn-primary ac-btn-sm">
+              <Plus size={15} /> Be the first to post
+            </button>
+          )}
+        </div>
       ) : (
-
-        <div className="broadcast-grid">
-
-          {filteredBroadcasts.length > 0 ? (
-
-            filteredBroadcasts.map(post => (
-
-              <div
-                key={post.id}
-                className="broadcast-card"
-              >
-
-                <div className="card-top">
-
-                  <span className="type-pill">
-
-                    {post.type}
-
-                  </span>
-
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {filteredBroadcasts.map((b) => (
+            <div key={b._id || b.id} className="ac-card ac-card-hover" style={{ padding: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.35rem' }}>
+                    <span className="ac-badge ac-badge-blue">
+                      {b.type || 'Opportunity'}
+                    </span>
+                    {b.company && (
+                      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)' }}>
+                        {b.company}
+                      </span>
+                    )}
+                  </div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a' }}>
+                    {b.title}
+                  </h3>
                 </div>
 
-                <h2>
-                  {post.title}
-                </h2>
-
-                <div className="meta">
-
-                  <span>
-
-                    <Building2 size={16} />
-
-                    {
-                      post.company ||
-                      'Unknown Company'
-                    }
-
-                  </span>
-
-                  <span>
-
-                    <Calendar size={16} />
-
-                    {
-
-                      post.createdAt
-
-                      ? new Date(
-                          post.createdAt
-                        ).toLocaleDateString()
-
-                      : 'Recently'
-
-                    }
-
-                  </span>
-
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Calendar size={14} />
+                  {b.createdAt ? new Date(b.createdAt).toLocaleDateString() : 'Active'}
                 </div>
-
-                <p className="desc">
-
-                  {post.description}
-
-                </p>
-
-                {post.link && (
-
-                  <a
-                    href={post.link}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="apply-btn"
-                  >
-
-                    Apply Now
-
-                    <ExternalLink size={16} />
-
-                  </a>
-
-                )}
-
               </div>
 
-            ))
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-body)', lineHeight: 1.6, marginBottom: '1.25rem', whiteSpace: 'pre-line' }}>
+                {b.description}
+              </p>
 
-          ) : (
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingTop: '0.85rem',
+                borderTop: '1px solid var(--border)',
+                flexWrap: 'wrap',
+                gap: '0.75rem'
+              }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  Posted by: <strong>{b.author_name || 'Alumni Member'}</strong>
+                </div>
 
-            <div className="empty-box">
-
-              No opportunities found.
-
+                {b.link && (
+                  <a
+                    href={b.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ac-btn ac-btn-primary ac-btn-sm"
+                  >
+                    View Details / Apply <ExternalLink size={14} />
+                  </a>
+                )}
+              </div>
             </div>
-
-          )}
-
+          ))}
         </div>
-
       )}
 
-      {/* MODAL */}
-
+      {/* CREATE MODAL */}
       {showModal && (
-
         <CreateBroadcast
-          onClose={() =>
-            setShowModal(false)
-          }
+          onClose={() => setShowModal(false)}
           onCreated={fetchBroadcasts}
         />
-
       )}
 
-      {/* CSS */}
-
-      <style>{`
-
-        body{
-          background:#081120;
-          color:white;
-          font-family:Inter,sans-serif;
-        }
-
-        .broadcast-page{
-          padding:3rem 8%;
-          min-height:100vh;
-        }
-
-        .hero-section{
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-          gap:2rem;
-          flex-wrap:wrap;
-          margin-bottom:3rem;
-        }
-
-        .hero-badge{
-          display:inline-flex;
-          align-items:center;
-          gap:0.5rem;
-          background:
-          rgba(59,130,246,0.12);
-          color:#60a5fa;
-          padding:0.7rem 1rem;
-          border-radius:999px;
-          margin-bottom:1rem;
-        }
-
-        .hero-section h1{
-          font-size:3rem;
-          margin-bottom:1rem;
-        }
-
-        .hero-section p{
-          color:#94a3b8;
-          max-width:700px;
-          line-height:1.8;
-        }
-
-        .create-btn{
-          border:none;
-          background:
-          linear-gradient(
-          135deg,
-          #2563eb,
-          #3b82f6
-          );
-          color:white;
-          padding:1rem 1.5rem;
-          border-radius:16px;
-          display:flex;
-          align-items:center;
-          gap:0.7rem;
-          cursor:pointer;
-          font-weight:600;
-        }
-
-        .filters{
-          display:flex;
-          gap:1rem;
-          flex-wrap:wrap;
-          margin-bottom:2rem;
-        }
-
-        .search-box{
-          flex:1;
-          min-width:280px;
-          display:flex;
-          align-items:center;
-          gap:0.8rem;
-          background:
-          rgba(255,255,255,0.04);
-          border:
-          1px solid rgba(255,255,255,0.08);
-          padding:1rem;
-          border-radius:16px;
-        }
-
-        .search-box input{
-          background:transparent;
-          border:none;
-          outline:none;
-          color:white;
-          width:100%;
-        }
-
-        select{
-          background:
-          rgba(255,255,255,0.04);
-          border:
-          1px solid rgba(255,255,255,0.08);
-          color:white;
-          border-radius:16px;
-          padding:1rem;
-        }
-
-        .broadcast-grid{
-          display:grid;
-          grid-template-columns:
-          repeat(auto-fit,minmax(350px,1fr));
-          gap:1.5rem;
-        }
-
-        .broadcast-card{
-          background:
-          rgba(255,255,255,0.04);
-          border:
-          1px solid rgba(255,255,255,0.08);
-          border-radius:24px;
-          padding:1.7rem;
-        }
-
-        .type-pill{
-          background:
-          rgba(16,185,129,0.12);
-          color:#10b981;
-          padding:0.35rem 0.8rem;
-          border-radius:999px;
-          font-size:0.75rem;
-        }
-
-        .broadcast-card h2{
-          margin:1rem 0;
-        }
-
-        .meta{
-          display:flex;
-          gap:1rem;
-          flex-wrap:wrap;
-          color:#94a3b8;
-          font-size:0.9rem;
-        }
-
-        .meta span{
-          display:flex;
-          align-items:center;
-          gap:0.4rem;
-        }
-
-        .desc{
-          margin:1.5rem 0;
-          line-height:1.8;
-          color:#cbd5e1;
-        }
-
-        .apply-btn{
-          display:inline-flex;
-          align-items:center;
-          gap:0.5rem;
-          text-decoration:none;
-          background:#2563eb;
-          color:white;
-          padding:0.9rem 1.2rem;
-          border-radius:12px;
-        }
-
-        .loading-box,
-        .empty-box{
-          text-align:center;
-          padding:4rem;
-          color:#94a3b8;
-        }
-
-      `}</style>
-
     </div>
-
   );
-
 };
 
 export default BroadcastFeed;

@@ -1,875 +1,393 @@
-import React, {
-  useState,
-  useEffect,
-  useRef
-} from 'react';
-
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-
 import api from '../utils/api';
-
 import {
-
   Send,
   MessageCircle,
   Search,
-  Phone,
-  Video,
-  MoreVertical,
-  CheckCheck,
-  Sparkles,
+  User,
+  ChevronLeft,
   Clock,
-  User2,
-  ChevronLeft
-
+  CheckCheck,
+  Building2,
+  Users
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Messages = () => {
-
   const { user } = useAuth();
-
   const [contacts, setContacts] = useState([]);
-
-  const [selectedContact, setSelectedContact] =
-    useState(null);
-
+  const [selectedContact, setSelectedContact] = useState(null);
   const [messages, setMessages] = useState([]);
-
-  const [newMessage, setNewMessage] =
-    useState('');
-
+  const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
-
   const [search, setSearch] = useState('');
-
   const chatEndRef = useRef(null);
 
-  // =========================================
+  const userId = user?.user_id || user?.id || user?._id;
+
   // FETCH CONTACTS
-  // =========================================
-
   useEffect(() => {
-
+    if (!userId) return;
     const fetchContacts = async () => {
-
       try {
-
-        const res = await api.get(
-          `/contacts/${user.user_id}`
-        );
-
-        setContacts(res.data.data || []);
-
+        const res = await api.get(`/contacts/${userId}`);
+        const data = res.data.data || [];
+        setContacts(data);
+        if (data.length > 0 && !selectedContact && window.innerWidth > 768) {
+          setSelectedContact(data[0]);
+        }
       } catch (err) {
-
-        console.error(err);
-
+        console.error('Error fetching contacts:', err);
       } finally {
-
         setLoading(false);
-
       }
-
     };
-
     fetchContacts();
+  }, [userId]);
 
-  }, [user.user_id]);
-
-  // =========================================
   // FETCH MESSAGES
-  // =========================================
-
   useEffect(() => {
-
-    if (!selectedContact) return;
+    if (!selectedContact || !userId) return;
 
     const fetchMessages = async () => {
-
       try {
-
-        const res = await api.get(
-
-          `/messages/${selectedContact.id}?user_id=${user.user_id}`
-
-        );
-
+        const res = await api.get(`/messages/${selectedContact.id}?user_id=${userId}`);
         setMessages(res.data.data || []);
-
       } catch (err) {
-
-        console.error(err);
-
+        console.error('Error fetching messages:', err);
       }
-
     };
 
     fetchMessages();
-
-    const interval = setInterval(
-      fetchMessages,
-      2500
-    );
-
+    const interval = setInterval(fetchMessages, 3000);
     return () => clearInterval(interval);
+  }, [selectedContact, userId]);
 
-  }, [selectedContact, user.user_id]);
-
-  // =========================================
   // AUTO SCROLL
-  // =========================================
-
   useEffect(() => {
-
-    chatEndRef.current?.scrollIntoView({
-      behavior: 'smooth'
-    });
-
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // =========================================
   // SEND MESSAGE
-  // =========================================
-
   const sendMessage = async (e) => {
-
     e.preventDefault();
+    if (!newMessage.trim() || !selectedContact) return;
 
-    if (
-      !newMessage.trim() ||
-      !selectedContact
-    ) return;
-
-    const tempMessage = {
-
-      sender_id: user.user_id,
-
-      content: newMessage,
-
+    const text = newMessage;
+    const tempMsg = {
+      sender_id: userId,
+      content: text,
       timestamp: new Date().toISOString()
-
     };
-
-    setMessages(prev => [...prev, tempMessage]);
-
-    const currentMessage = newMessage;
-
+    setMessages((prev) => [...prev, tempMsg]);
     setNewMessage('');
 
     try {
-
       await api.post('/messages', {
-
-        sender_id: user.user_id,
-
+        sender_id: userId,
         receiver_id: selectedContact.id,
-
-        content: currentMessage
-
+        content: text
       });
-
     } catch (err) {
-
-      console.error(err);
-
+      console.error('Error sending message:', err);
     }
-
   };
 
-  // =========================================
-  // FILTER CONTACTS
-  // =========================================
-
-  const filteredContacts = contacts.filter(
-    contact =>
-
-      contact.name
-      .toLowerCase()
-      .includes(search.toLowerCase())
-
+  const filteredContacts = contacts.filter((c) =>
+    c.name?.toLowerCase().includes(search.toLowerCase()) ||
+    c.company?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-
-    <div className="messages-layout">
-
-      {/* SIDEBAR */}
-
-      <aside className="chat-sidebar">
-
-        {/* HEADER */}
-
-        <div className="sidebar-header">
-
-          <div className="sidebar-title">
-
-            <MessageCircle size={24} />
-
-            <div>
-
-              <h2>Messages</h2>
-
-              <p>
-                Professional conversations
-              </p>
-
-            </div>
-
-          </div>
-
+    <div className="ac-container animate-fade-in" style={{ paddingBottom: '2rem' }}>
+      
+      {/* HEADER */}
+      <div className="ac-page-header" style={{ marginBottom: '1.25rem' }}>
+        <div>
+          <h1 className="ac-page-title">
+            Messages & Mentorship Discussions
+          </h1>
+          <p className="ac-page-subtitle">
+            Direct, private conversations between accepted students and alumni mentors.
+          </p>
         </div>
-
-        {/* SEARCH */}
-
-        <div className="search-box">
-
-          <Search size={18} />
-
-          <input
-            type="text"
-            placeholder="Search conversations..."
-            value={search}
-            onChange={(e) =>
-              setSearch(e.target.value)
-            }
-          />
-
-        </div>
-
-        {/* CONTACTS */}
-
-        <div className="contacts-list">
-
-          {loading ? (
-
-            <div className="empty-state">
-              Loading chats...
-            </div>
-
-          ) : filteredContacts.length === 0 ? (
-
-            <div className="empty-state">
-
-              <Sparkles size={40} />
-
-              <p>
-                No active conversations yet.
-              </p>
-
-            </div>
-
-          ) : (
-
-            filteredContacts.map(contact => (
-
-              <div
-
-                key={contact.id}
-
-                className={`
-                contact-item
-                ${
-                  selectedContact?.id === contact.id
-                    ? 'active-contact'
-                    : ''
-                }
-                `}
-
-                onClick={() =>
-                  setSelectedContact(contact)
-                }
-
-              >
-
-                {/* AVATAR */}
-
-                <div className="avatar">
-
-                  {contact.name?.[0]}
-
-                  <span className="online-dot"></span>
-
-                </div>
-
-                {/* INFO */}
-
-                <div className="contact-info">
-
-                  <div className="contact-top">
-
-                    <h4>
-                      {contact.name}
-                    </h4>
-
-                    <span>
-                      Active
-                    </span>
-
-                  </div>
-
-                  <p>
-                    {contact.role}
-                  </p>
-
-                </div>
-
-              </div>
-
-            ))
-
-          )}
-
-        </div>
-
-      </aside>
-
-      {/* CHAT WINDOW */}
-
-      <main className="chat-window">
-
-        {selectedContact ? (
-
-          <>
-
-            {/* CHAT HEADER */}
-
-            <div className="chat-header">
-
-              <div className="chat-user">
-
-                <div className="avatar big-avatar">
-
-                  {selectedContact.name?.[0]}
-
-                </div>
-
-                <div>
-
-                  <h3>
-                    {selectedContact.name}
-                  </h3>
-
-                  <p>
-                    Active now
-                  </p>
-
-                </div>
-
-              </div>
-
-              {/* ACTIONS */}
-
-              <div className="chat-actions">
-
-                <button>
-                  <Phone size={18} />
-                </button>
-
-                <button>
-                  <Video size={18} />
-                </button>
-
-                <button>
-                  <MoreVertical size={18} />
-                </button>
-
-              </div>
-
-            </div>
-
-            {/* MESSAGES */}
-
-            <div className="messages-container">
-
-              {messages.map((msg, index) => {
-
-                const isMine =
-                  msg.sender_id === user.user_id;
-
-                return (
-
-                  <div
-
-                    key={index}
-
-                    className={`
-                    message-row
-                    ${
-                      isMine
-                        ? 'mine'
-                        : 'theirs'
-                    }
-                    `}
-
-                  >
-
-                    <div className="message-bubble">
-
-                      <p>
-                        {msg.content}
-                      </p>
-
-                      <div className="message-meta">
-
-                        <span>
-
-                          {new Date(
-                            msg.timestamp
-                          ).toLocaleTimeString(
-                            [],
-                            {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            }
-                          )}
-
-                        </span>
-
-                        {isMine && (
-                          <CheckCheck
-                            size={14}
-                          />
-                        )}
-
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                );
-
-              })}
-
-              <div ref={chatEndRef}></div>
-
-            </div>
-
-            {/* INPUT */}
-
-            <form
-              className="message-form"
-              onSubmit={sendMessage}
-            >
-
+      </div>
+
+      {/* CHAT CONTAINER */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: selectedContact && window.innerWidth <= 768 ? '1fr' : '320px 1fr',
+        background: '#ffffff',
+        border: '1px solid var(--border)',
+        borderRadius: '16px',
+        height: '660px',
+        overflow: 'hidden',
+        boxShadow: 'var(--shadow-sm)'
+      }}>
+        
+        {/* CONTACTS SIDEBAR */}
+        <aside style={{
+          display: selectedContact && window.innerWidth <= 768 ? 'none' : 'flex',
+          flexDirection: 'column',
+          borderRight: '1px solid var(--border)',
+          background: '#f8fafc'
+        }}>
+          {/* Search bar */}
+          <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', background: '#ffffff' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: '#f8fafc',
+              border: '1px solid var(--border)',
+              borderRadius: '8px',
+              padding: '0.45rem 0.75rem'
+            }}>
+              <Search size={15} color="var(--text-muted)" />
               <input
-
                 type="text"
-
-                placeholder="Write your message..."
-
-                value={newMessage}
-
-                onChange={(e) =>
-                  setNewMessage(e.target.value)
-                }
-
+                placeholder="Search conversations..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{ border: 'none', padding: 0, fontSize: '0.85rem', width: '100%', background: 'transparent' }}
               />
-
-              <button type="submit">
-
-                <Send size={18} />
-
-              </button>
-
-            </form>
-
-          </>
-
-        ) : (
-
-          <div className="chat-placeholder">
-
-            <div className="placeholder-icon">
-
-              <MessageCircle size={60} />
-
             </div>
-
-            <h2>
-              Your Professional Conversations
-            </h2>
-
-            <p>
-              Select a mentor or mentee to
-              begin chatting.
-            </p>
-
           </div>
 
-        )}
+          {/* Contacts List */}
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {loading ? (
+              <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                Loading conversations...
+              </div>
+            ) : filteredContacts.length === 0 ? (
+              <div style={{ padding: '2rem 1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                <p style={{ marginBottom: '0.75rem' }}>No conversations yet.</p>
+                <p style={{ fontSize: '0.8rem' }}>
+                  {user?.role === 'student'
+                    ? 'Once an alumni accepts your mentorship request, they will appear here.'
+                    : 'Accepted student mentees will appear here.'}
+                </p>
+                {user?.role === 'student' && (
+                  <Link to="/mentors" className="ac-btn ac-btn-primary ac-btn-sm" style={{ marginTop: '1rem' }}>
+                    Find Mentors
+                  </Link>
+                )}
+              </div>
+            ) : (
+              filteredContacts.map((c) => {
+                const isSelected = selectedContact?.id === c.id;
+                return (
+                  <div
+                    key={c.id}
+                    onClick={() => setSelectedContact(c)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      padding: '0.85rem 1rem',
+                      borderBottom: '1px solid var(--border)',
+                      cursor: 'pointer',
+                      background: isSelected ? 'var(--primary-light)' : 'transparent',
+                      borderLeft: isSelected ? '3px solid var(--primary)' : '3px solid transparent',
+                      transition: 'background 0.15s ease'
+                    }}
+                  >
+                    <div className="ac-avatar ac-avatar-md">
+                      {c.name?.slice(0, 2).toUpperCase() || 'U'}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'baseline',
+                        marginBottom: '0.15rem'
+                      }}>
+                        <div style={{
+                          fontWeight: 700,
+                          fontSize: '0.9rem',
+                          color: '#0f172a',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}>
+                          {c.name}
+                        </div>
+                      </div>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: 'var(--text-muted)',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
+                        {c.company || (c.role === 'alumni' ? 'Alumni Mentor' : 'Student')}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </aside>
 
-      </main>
+        {/* CHAT WINDOW */}
+        <main style={{
+          display: !selectedContact && window.innerWidth <= 768 ? 'none' : 'flex',
+          flexDirection: 'column',
+          background: '#ffffff'
+        }}>
+          {selectedContact ? (
+            <>
+              {/* Chat Header */}
+              <div style={{
+                padding: '0.85rem 1.25rem',
+                borderBottom: '1px solid var(--border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: '#ffffff'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  {window.innerWidth <= 768 && (
+                    <button
+                      onClick={() => setSelectedContact(null)}
+                      style={{ padding: '0.25rem', marginRight: '0.25rem' }}
+                    >
+                      <ChevronLeft size={20} />
+                    </button>
+                  )}
+                  <div className="ac-avatar ac-avatar-md">
+                    {selectedContact.name?.slice(0, 2).toUpperCase() || 'U'}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f172a' }}>
+                      {selectedContact.name}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      {selectedContact.company || (selectedContact.role === 'alumni' ? 'Alumni Mentor' : 'Student')}
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-      {/* CSS */}
+              {/* Messages Area */}
+              <div style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: '1.25rem',
+                background: '#fafafa',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.85rem'
+              }}>
+                {messages.length === 0 ? (
+                  <div style={{
+                    margin: 'auto',
+                    textAlign: 'center',
+                    color: 'var(--text-muted)',
+                    fontSize: '0.875rem'
+                  }}>
+                    <MessageCircle size={32} color="var(--primary)" style={{ opacity: 0.5, marginBottom: '0.5rem' }} />
+                    <p>Start a conversation with {selectedContact.name}.</p>
+                    <span style={{ fontSize: '0.75rem' }}>
+                      Ask for resume feedback, interview tips, or schedule a quick guidance call.
+                    </span>
+                  </div>
+                ) : (
+                  messages.map((m, idx) => {
+                    const isMe = m.sender_id === userId;
+                    return (
+                      <div
+                        key={idx}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: isMe ? 'flex-end' : 'flex-start',
+                          maxWidth: '100%'
+                        }}
+                      >
+                        <div style={{
+                          background: isMe ? 'var(--primary)' : '#ffffff',
+                          color: isMe ? '#ffffff' : 'var(--text-title)',
+                          padding: '0.65rem 1rem',
+                          borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                          border: isMe ? 'none' : '1px solid var(--border)',
+                          boxShadow: 'var(--shadow-xs)',
+                          fontSize: '0.875rem',
+                          maxWidth: '75%',
+                          lineHeight: 1.5,
+                          wordBreak: 'break-word'
+                        }}>
+                          {m.content}
+                        </div>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                          {m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={chatEndRef} />
+              </div>
 
-      <style>{`
+              {/* Input Bar */}
+              <form
+                onSubmit={sendMessage}
+                style={{
+                  padding: '0.85rem 1.25rem',
+                  borderTop: '1px solid var(--border)',
+                  display: 'flex',
+                  gap: '0.75rem',
+                  alignItems: 'center'
+                }}
+              >
+                <input
+                  type="text"
+                  placeholder={`Message ${selectedContact.name}...`}
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  style={{
+                    flex: 1,
+                    border: '1px solid var(--border)',
+                    borderRadius: '10px',
+                    padding: '0.65rem 1rem',
+                    fontSize: '0.875rem'
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={!newMessage.trim()}
+                  className="ac-btn ac-btn-primary"
+                  style={{ padding: '0.65rem 1.15rem' }}
+                >
+                  <Send size={15} /> Send
+                </button>
+              </form>
+            </>
+          ) : (
+            <div style={{
+              margin: 'auto',
+              textAlign: 'center',
+              color: 'var(--text-muted)',
+              padding: '2rem'
+            }}>
+              <MessageCircle size={40} color="var(--primary)" style={{ opacity: 0.4, marginBottom: '0.75rem' }} />
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.25rem' }}>
+                Select a Conversation
+              </h3>
+              <p style={{ fontSize: '0.85rem' }}>
+                Choose an alumni mentor or student from the sidebar to view message history.
+              </p>
+            </div>
+          )}
+        </main>
 
-        *{
-          box-sizing:border-box;
-        }
-
-        body{
-          background:#081120;
-          color:white;
-          font-family:Inter,sans-serif;
-        }
-
-        .messages-layout{
-          display:flex;
-          height:100vh;
-          overflow:hidden;
-        }
-
-        /* SIDEBAR */
-
-        .chat-sidebar{
-          width:340px;
-          background:
-          rgba(255,255,255,0.03);
-          border-right:
-          1px solid rgba(255,255,255,0.08);
-          display:flex;
-          flex-direction:column;
-          backdrop-filter:blur(20px);
-        }
-
-        .sidebar-header{
-          padding:1.8rem;
-          border-bottom:
-          1px solid rgba(255,255,255,0.06);
-        }
-
-        .sidebar-title{
-          display:flex;
-          align-items:center;
-          gap:1rem;
-        }
-
-        .sidebar-title p{
-          color:#94a3b8;
-          font-size:0.9rem;
-        }
-
-        /* SEARCH */
-
-        .search-box{
-          margin:1.2rem;
-          display:flex;
-          align-items:center;
-          gap:0.8rem;
-          background:
-          rgba(255,255,255,0.04);
-          border:
-          1px solid rgba(255,255,255,0.08);
-          border-radius:14px;
-          padding:0.9rem 1rem;
-        }
-
-        .search-box input{
-          background:transparent;
-          border:none;
-          outline:none;
-          color:white;
-          width:100%;
-        }
-
-        /* CONTACTS */
-
-        .contacts-list{
-          flex:1;
-          overflow-y:auto;
-          padding:0.5rem;
-        }
-
-        .contact-item{
-          display:flex;
-          align-items:center;
-          gap:1rem;
-          padding:1rem;
-          border-radius:18px;
-          cursor:pointer;
-          transition:0.25s;
-          margin-bottom:0.5rem;
-        }
-
-        .contact-item:hover{
-          background:
-          rgba(255,255,255,0.04);
-        }
-
-        .active-contact{
-          background:
-          rgba(59,130,246,0.12);
-          border:
-          1px solid rgba(59,130,246,0.2);
-        }
-
-        /* AVATAR */
-
-        .avatar{
-          width:52px;
-          height:52px;
-          border-radius:50%;
-          background:
-          linear-gradient(
-          135deg,
-          #2563eb,
-          #7c3aed
-          );
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          font-weight:700;
-          position:relative;
-        }
-
-        .online-dot{
-          position:absolute;
-          bottom:2px;
-          right:2px;
-          width:12px;
-          height:12px;
-          border-radius:50%;
-          background:#10b981;
-          border:2px solid #081120;
-        }
-
-        .big-avatar{
-          width:58px;
-          height:58px;
-          font-size:1.2rem;
-        }
-
-        .contact-info{
-          flex:1;
-        }
-
-        .contact-top{
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-        }
-
-        .contact-top h4{
-          margin:0;
-        }
-
-        .contact-top span{
-          font-size:0.75rem;
-          color:#10b981;
-        }
-
-        .contact-info p{
-          color:#94a3b8;
-          font-size:0.85rem;
-          margin-top:0.3rem;
-          text-transform:capitalize;
-        }
-
-        /* CHAT WINDOW */
-
-        .chat-window{
-          flex:1;
-          display:flex;
-          flex-direction:column;
-          background:
-          linear-gradient(
-          180deg,
-          rgba(15,23,42,0.96),
-          rgba(2,6,23,1)
-          );
-        }
-
-        /* HEADER */
-
-        .chat-header{
-          padding:1.2rem 2rem;
-          border-bottom:
-          1px solid rgba(255,255,255,0.06);
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-        }
-
-        .chat-user{
-          display:flex;
-          align-items:center;
-          gap:1rem;
-        }
-
-        .chat-user p{
-          color:#10b981;
-          font-size:0.85rem;
-        }
-
-        .chat-actions{
-          display:flex;
-          gap:0.8rem;
-        }
-
-        .chat-actions button{
-          width:42px;
-          height:42px;
-          border-radius:14px;
-          border:none;
-          background:
-          rgba(255,255,255,0.05);
-          color:white;
-          cursor:pointer;
-        }
-
-        /* MESSAGES */
-
-        .messages-container{
-          flex:1;
-          overflow-y:auto;
-          padding:2rem;
-          display:flex;
-          flex-direction:column;
-          gap:1rem;
-        }
-
-        .message-row{
-          display:flex;
-        }
-
-        .mine{
-          justify-content:flex-end;
-        }
-
-        .theirs{
-          justify-content:flex-start;
-        }
-
-        .message-bubble{
-          max-width:70%;
-          padding:1rem 1.2rem;
-          border-radius:22px;
-          background:
-          rgba(255,255,255,0.06);
-          line-height:1.6;
-        }
-
-        .mine .message-bubble{
-          background:
-          linear-gradient(
-          135deg,
-          #2563eb,
-          #3b82f6
-          );
-          border-bottom-right-radius:8px;
-        }
-
-        .theirs .message-bubble{
-          border-bottom-left-radius:8px;
-        }
-
-        .message-meta{
-          display:flex;
-          align-items:center;
-          justify-content:flex-end;
-          gap:0.4rem;
-          margin-top:0.5rem;
-          font-size:0.7rem;
-          opacity:0.7;
-        }
-
-        /* INPUT */
-
-        .message-form{
-          padding:1.5rem;
-          border-top:
-          1px solid rgba(255,255,255,0.06);
-          display:flex;
-          gap:1rem;
-        }
-
-        .message-form input{
-          flex:1;
-          background:
-          rgba(255,255,255,0.05);
-          border:
-          1px solid rgba(255,255,255,0.08);
-          border-radius:16px;
-          padding:1rem 1.2rem;
-          color:white;
-          outline:none;
-        }
-
-        .message-form button{
-          width:58px;
-          border:none;
-          border-radius:16px;
-          background:
-          linear-gradient(
-          135deg,
-          #2563eb,
-          #3b82f6
-          );
-          color:white;
-          cursor:pointer;
-        }
-
-        /* EMPTY */
-
-        .chat-placeholder{
-          flex:1;
-          display:flex;
-          flex-direction:column;
-          justify-content:center;
-          align-items:center;
-          text-align:center;
-          color:#94a3b8;
-          padding:2rem;
-        }
-
-        .placeholder-icon{
-          width:120px;
-          height:120px;
-          border-radius:50%;
-          background:
-          rgba(255,255,255,0.04);
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          margin-bottom:2rem;
-        }
-
-        .empty-state{
-          padding:3rem 2rem;
-          text-align:center;
-          color:#94a3b8;
-        }
-
-        @media(max-width:900px){
-
-          .chat-sidebar{
-            width:100%;
-            max-width:320px;
-          }
-
-        }
-
-        @media(max-width:768px){
-
-          .messages-layout{
-            flex-direction:column;
-          }
-
-          .chat-sidebar{
-            width:100%;
-            height:280px;
-          }
-
-        }
-
-      `}</style>
+      </div>
 
     </div>
-
   );
-
 };
 
 export default Messages;
